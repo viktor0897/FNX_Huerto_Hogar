@@ -41,6 +41,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.material3)
     val roomVersion = "2.8.1" // Usa la versión más reciente
     implementation("androidx.room:room-runtime:$roomVersion")
 
