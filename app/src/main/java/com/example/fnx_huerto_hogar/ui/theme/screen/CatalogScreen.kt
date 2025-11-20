@@ -31,8 +31,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,8 +48,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavHost
-import androidx.navigation.NavHostController
 import com.example.fnx_huerto_hogar.data.model.Product
 import com.example.fnx_huerto_hogar.data.model.ProductCategory
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
@@ -53,6 +55,7 @@ import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
 import com.example.fnx_huerto_hogar.ui.theme.GreenSecondary
 import com.example.fnx_huerto_hogar.ui.theme.YellowAccent
 import com.example.fnx_huerto_hogar.ui.theme.viewModel.CatalogoViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,6 +68,15 @@ fun CatalogScreen(
     val products by viewModel.products.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
+
+    var selectedProductId by remember {mutableStateOf<String?>(null)}
+    var showProductDetail by remember {mutableStateOf(false)}
+
+    LaunchedEffect(selectedProductId){
+        if (selectedProductId != null){
+            showProductDetail = true
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -109,12 +121,27 @@ fun CatalogScreen(
                 onCategorySelected = viewModel::filterByCategory
             )
 
-            //Lista
+            // Lista
             if (isLoading) {
                 LoadingIndicator()
             } else {
-                ProductList(products = products)
+                ProductList(
+                    products = products,
+                    onProductClick = { product ->
+                        selectedProductId = product.id
+                    }
+                )
             }
+        }
+
+        if (showProductDetail && selectedProductId != null) {
+            DetalleProductoScreen(
+                productId = selectedProductId!!,
+                onDismiss = {
+                    showProductDetail = false
+                    selectedProductId = null
+                }
+            )
         }
     }
 }
@@ -173,7 +200,10 @@ fun CategoryFilterSection(
 }
 
 @Composable
-fun ProductList(products: List<Product>) {
+fun ProductList(
+    products: List<Product>,
+    onProductClick: (Product) -> Unit
+) {
     if (products.isEmpty()) {
         EmptyState()
     } else {
@@ -183,7 +213,10 @@ fun ProductList(products: List<Product>) {
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
         ) {
             items(products) { product ->
-                ProductCard(product = product)
+                ProductCard(
+                    product = product,
+                    onProductClick = onProductClick
+                )
             }
         }
     }
@@ -191,15 +224,21 @@ fun ProductList(products: List<Product>) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductCard(product: Product) {
+fun ProductCard(
+    product: Product,
+    onProductClick: (Product) -> Unit
+){
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        // Navegar al detalle del producto
+        onClick = {onProductClick(product)}
+
+    ){
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
