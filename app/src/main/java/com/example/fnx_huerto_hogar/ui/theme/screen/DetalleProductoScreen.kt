@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.fnx_huerto_hogar.data.repository.CartRepository
 import com.example.fnx_huerto_hogar.data.repository.ProductRepository
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
@@ -61,14 +62,18 @@ import kotlinx.coroutines.launch
 fun DetalleProductoScreen(
     productId: String,
     repository: ProductRepository = remember { ProductRepository() },
+    cartRepository: CartRepository = CartRepository,
     onDismiss: () -> Unit
 ) {
     // Factory
     val viewModel: DetalleProductoViewModel = viewModel(
         factory = DPViewModelFactory(
             repository = repository,
+            cartRepository = cartRepository,
             productId = productId
-        )
+        ),
+        key = productId
+
     )
 
     // Estado del ViewModel
@@ -423,7 +428,7 @@ fun DetailRow(label: String, value: String){
         horizontalArrangement = Arrangement.SpaceBetween
     ){
         Text(
-            text = value,
+            text = label,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurfaceVariant

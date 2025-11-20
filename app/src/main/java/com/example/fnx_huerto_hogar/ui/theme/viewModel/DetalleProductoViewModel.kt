@@ -4,6 +4,7 @@ import androidx.compose.runtime.MutableState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fnx_huerto_hogar.data.model.Product
+import com.example.fnx_huerto_hogar.data.repository.CartRepository
 import com.example.fnx_huerto_hogar.data.repository.ProductRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,6 +13,7 @@ import kotlinx.coroutines.launch
 
 class DetalleProductoViewModel(
     private val productRepository: ProductRepository,
+    private val cartRepository: CartRepository,
     private val productId : String
 ): ViewModel() {
     private val _product = MutableStateFlow<Product?>(null)
@@ -62,20 +64,29 @@ class DetalleProductoViewModel(
         }
     }
 
-    fun addToCart(){
+    fun addToCart() {
         viewModelScope.launch {
             _addToCart.value = true
             try {
-                val product = _product.value
-                if (product != null){
-                    val success = productRepository.reduceStock(productId, _quantity.value)
-                    if (success){
-                        _message.value = "${_quantity.value} ${product.name} agregado al carrito"
-                    }else{
-                        _message.value = "No hay stock suficente"
+                val currentProduct = _product.value
+                if (currentProduct != null) {
+                    val success = cartRepository.addToCart(
+                        productoId = currentProduct.id,
+                        name = currentProduct.name,
+                        price = currentProduct.price,
+                        image = currentProduct.image,
+                        quantity = _quantity.value
+                    )
+
+                    if (success) {
+                        _message.value = "Producto agregado al carrito"
+                    } else {
+                        _message.value = "Error al agregar al carrito"
                     }
                 }
-            }finally {
+            } catch (e: Exception) {
+                _message.value = "Error: ${e.message}"
+            } finally {
                 _addToCart.value = false
             }
         }
