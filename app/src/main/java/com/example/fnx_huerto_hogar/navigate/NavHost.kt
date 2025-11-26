@@ -3,16 +3,13 @@ package com.example.fnx_huerto_hogar.navigate
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import com.example.fnx_huerto_hogar.ui.theme.screen.CartScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.CatalogScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.FavoriteScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.HomeScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.LoginScreen
-import com.example.fnx_huerto_hogar.ui.theme.screen.DetalleProductoScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.RegisterScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.SettingsScreen
 
