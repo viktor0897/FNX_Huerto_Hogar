@@ -17,19 +17,38 @@ import com.example.fnx_huerto_hogar.ui.theme.screen.SettingsScreen
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier
-){
-
+) {
     NavHost(
         navController = navController,
         startDestination = AppScreens.HomeScreen.route,
         modifier = modifier
-    ){
-        composable (route = AppScreens.HomeScreen.route){ HomeScreen(navController = navController) }
-        composable (route = AppScreens.CatalogScreen.route){ CatalogScreen(navController = navController) }
-        composable (route = AppScreens.CartScreen.route){ CartScreen(navController = navController) }
-        composable (route = AppScreens.FavoriteScreen.route){ FavoriteScreen(navController = navController) }
-        composable (route = AppScreens.LoginScreen.route){ LoginScreen(navController = navController) }
-        composable (route = AppScreens.RegisterScreen.route){ RegisterScreen(navController = navController) }
-        composable (route = AppScreens.SettingsScreen.route){ SettingsScreen(navController = navController) }
+    ) {
+        composable(route = AppScreens.HomeScreen.route) {
+            HomeScreen(navController = navController)
+        }
+
+        composable(route = AppScreens.CatalogScreen.route) {
+            CatalogScreen(navController = navController)
+        }
+
+        composable(route = AppScreens.CartScreen.route) {
+            CartScreen(navController = navController)
+        }
+
+        composable(route = AppScreens.FavoriteScreen.route) {
+            FavoriteScreen(navController = navController)
+        }
+
+        composable(route = AppScreens.LoginScreen.route) {
+            LoginScreen(navController = navController)
+        }
+
+        composable(route = AppScreens.RegisterScreen.route) {
+            RegisterScreen(navController = navController)
+        }
+
+        composable(route = AppScreens.SettingsScreen.route) {
+            SettingsScreen(navController = navController)
+        }
     }
 }
