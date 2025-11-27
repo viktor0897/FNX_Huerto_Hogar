@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class UserViewModel(): ViewModel() {
+class RegisterViewModel(): ViewModel() {
 
     //Repositorio de falla
     private val userRepository = UserRepository()
@@ -175,6 +175,8 @@ class UserViewModel(): ViewModel() {
         //Si pasamos las validaciones
         viewModelScope.launch {
             _isLoading.value = true
+            _errorMessage.value = null
+
             try {
                 val user = User(
                     email = _email.value.trim().lowercase(),

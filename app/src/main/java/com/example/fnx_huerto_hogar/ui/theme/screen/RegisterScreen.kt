@@ -21,13 +21,14 @@ import androidx.navigation.NavHostController
 import com.example.fnx_huerto_hogar.navigate.AppScreens
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
-import com.example.fnx_huerto_hogar.ui.theme.viewModel.UserViewModel
+import com.example.fnx_huerto_hogar.ui.theme.viewModel.RegisterViewModel
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     navController: NavHostController,
-    viewModel: UserViewModel = viewModel()
+    viewModel: RegisterViewModel = viewModel()
 ) {
     // Observar los estados del ViewModel
     val name by viewModel.name.collectAsState()
@@ -46,6 +47,7 @@ fun RegisterScreen(
     // Navegar si el registro fue exitoso
     LaunchedEffect(isSuccess) {
         if (isSuccess) {
+            delay(1500)
             navController.navigate(AppScreens.HomeScreen.route) {
                 popUpTo(AppScreens.RegisterScreen.route) { inclusive = true }
             }
@@ -108,6 +110,24 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            if (isSuccess) {
+                Text(
+                    text = "Registro Exitoso",
+                    color = GreenPrimary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp)
+                        .background(
+                            color = GreenPrimary.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(16.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+
             // Mostrar error si existe
             errorMessage?.let { error ->
                 Text(
@@ -133,27 +153,56 @@ fun RegisterScreen(
 
             // Botón de Registro
             Button(
-                onClick = viewModel::register,
+                onClick = {
+                    viewModel.register()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                enabled = !isLoading,
+                enabled = !isLoading && !isSuccess,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = GreenPrimary
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = Color.White
-                    )
-                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Registrando")
+                    }
+                }else if (isSuccess){
+                    Text("Registrado")
+                }else {
                     Text(
                         text = "Registrarse",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            //Para ir al login si ya se tiene cuenta
+            if (isSuccess){
+                Spacer(modifier = Modifier.height(16.dp))
+                TextButton(
+                    onClick = {
+                        navController.navigate(AppScreens.LoginScreen.route){
+                            popUpTo(AppScreens.RegisterScreen.route){ inclusive = true }
+                        }
+                    }
+                ) {
+                    Text(
+                        text = "¿Ya tienes cuenta? Inicia Sesión",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = GreenPrimary
                     )
                 }
             }

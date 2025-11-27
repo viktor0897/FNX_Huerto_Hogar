@@ -7,7 +7,7 @@ import kotlinx.coroutines.delay
 class UserRepository {
 
     suspend fun registerUser(user: User): Boolean {
-        delay(1000)
+        //delay(1000)
         return try {
             val userExist = users.find { it.email == user.email }
             if (userExist != null) {
@@ -23,19 +23,19 @@ class UserRepository {
 
     //Login
     suspend fun login(email: String, password: String): User? {
-        delay(800)
+        //delay(800)
         return users.find { it.email == email && it.password == password }
     }
 
     //Coger todos
     suspend fun getAllUsers(): List<User> {
-        delay(500)
+        //delay(500)
         return users.toList()
     }
 
     //Deletear
     suspend fun deleteUser(email: String): Boolean {
-        delay(300)
+        //delay(300)
         return try {
             val userExist = users.find { it.email == email }
             if (userExist != null) {
@@ -51,7 +51,7 @@ class UserRepository {
 
     //Cogerlos por Email
     suspend fun getUserByEmail(email: String): User?{
-        delay(400)
+        //delay(400)
         return users.find {it.email == email}
     }
 
