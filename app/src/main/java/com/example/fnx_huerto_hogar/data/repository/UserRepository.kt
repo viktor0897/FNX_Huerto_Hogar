@@ -4,8 +4,14 @@ import com.example.fnx_huerto_hogar.data.model.User
 import com.example.fnx_huerto_hogar.data.model.UserRole
 import kotlinx.coroutines.delay
 
-class UserRepository {
+object UserRepository {
 
+    //Variable que guarda el usuario actual
+    private var currentUser: User? = null
+        private set //Todos pueden ver quien vive en la casa (CurrentUser) Pero solo el dueño puede
+                    //Cambiar quien vive en la casa (modificarlo)
+
+    //Registrao
     suspend fun registerUser(user: User): Boolean {
         delay(1000)
         return try {
@@ -24,8 +30,19 @@ class UserRepository {
     //Login
     suspend fun login(email: String, password: String): User? {
         delay(800)
-        return users.find { it.email == email && it.password == password }
+        val user = users.find { it.email == email && it.password == password }
+        if (user != null) {
+            currentUser = user
+        }
+        return user
     }
+
+    fun logout(){
+        currentUser = null
+    }
+
+    //Coger usuario actual
+    fun getCurrentUser(): User? = currentUser
 
     //Coger todos
     suspend fun getAllUsers(): List<User> {
@@ -58,7 +75,7 @@ class UserRepository {
     //Lista de usuarios seteados
     private val users = mutableListOf<User>(
         User(
-            email = "bastian@duoc.com",
+            email = "bastian@duoc.cl",
             name = "Bastian",
             lastName = "Burgos",
             password = "123456",

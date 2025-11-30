@@ -10,10 +10,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class UserViewModel(): ViewModel() {
+class RegisterViewModel : ViewModel() {
 
     //Repositorio de falla
-    private val userRepository = UserRepository()
+    private val userRepository = UserRepository
 
     //Val de los fields
     private val _name = MutableStateFlow("")
@@ -101,7 +101,7 @@ class UserViewModel(): ViewModel() {
     private fun isValidEmail(email: String): Boolean {
         val emailLowerCase = email.trim().lowercase()
         return emailLowerCase.endsWith("@duoc.cl") ||
-                emailLowerCase.endsWith("profesor.duoc.cl") ||
+                emailLowerCase.endsWith("@profesor.duoc.cl") ||
                 emailLowerCase.endsWith("@gmail.com")
     }
 
@@ -175,6 +175,7 @@ class UserViewModel(): ViewModel() {
         //Si pasamos las validaciones
         viewModelScope.launch {
             _isLoading.value = true
+            _errorMessage.value = null
             try {
                 val user = User(
                     email = _email.value.trim().lowercase(),

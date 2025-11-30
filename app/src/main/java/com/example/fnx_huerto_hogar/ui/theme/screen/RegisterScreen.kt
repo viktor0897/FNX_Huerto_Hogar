@@ -21,13 +21,13 @@ import androidx.navigation.NavHostController
 import com.example.fnx_huerto_hogar.navigate.AppScreens
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
-import com.example.fnx_huerto_hogar.ui.theme.viewModel.UserViewModel
+import com.example.fnx_huerto_hogar.ui.theme.viewModel.RegisterViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     navController: NavHostController,
-    viewModel: UserViewModel = viewModel()
+    viewModel: RegisterViewModel = viewModel()
 ) {
     // Observar los estados del ViewModel
     val name by viewModel.name.collectAsState()
