@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
@@ -30,6 +31,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.fnx_huerto_hogar.R
 import com.example.fnx_huerto_hogar.navigate.AppScreens
 import com.example.fnx_huerto_hogar.navigate.AppNavHost
+import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
+import com.example.fnx_huerto_hogar.ui.theme.GreenSecondary
 import kotlinx.coroutines.launch
 
 @Composable
@@ -41,7 +44,9 @@ fun LateralMenu() {
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet {
+            ModalDrawerSheet(
+                drawerContainerColor = GrayBackground
+            ) {
                 // Logo cabecero
                 Column(
                     modifier = Modifier
@@ -59,12 +64,21 @@ fun LateralMenu() {
                     )
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    color = GreenSecondary
+                )
+
                 Spacer(modifier = Modifier.padding(vertical = 4.dp))
 
                 // Sección de usuario
                 NavigationDrawerItem(
-                    label = { Text("Iniciar Sesión") },
+                    label = {
+                        Text(
+                            text = "Iniciar Sesión",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyLarge
+                    ) },
                     selected = false,
                     onClick = {
                         scope.launch { drawerState.close() }
@@ -73,13 +87,19 @@ fun LateralMenu() {
                     icon = {
                         Icon(
                             imageVector = Icons.Outlined.AccountCircle,
-                            contentDescription = "Iniciar Sesión"
+                            contentDescription = "Iniciar Sesión",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 )
 
                 NavigationDrawerItem(
-                    label = { Text("Registrarse") },
+                    label = {
+                        Text(
+                            text = "Registrarse",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyLarge
+                        ) },
                     selected = false,
                     onClick = {
                         scope.launch { drawerState.close() }
@@ -88,17 +108,27 @@ fun LateralMenu() {
                     icon = {
                         Icon(
                             imageVector = Icons.Outlined.Create,
-                            contentDescription = "Registrarse"
+                            contentDescription = "Registrarse",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    color = GreenSecondary
+                )
 
                 // Sección de configuración
                 NavigationDrawerItem(
-                    label = { Text("Configuración") },
+                    label = {
+                        Text(
+                            text = "Configuración",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        ) },
                     selected = false,
                     onClick = {
                         scope.launch { drawerState.close() }

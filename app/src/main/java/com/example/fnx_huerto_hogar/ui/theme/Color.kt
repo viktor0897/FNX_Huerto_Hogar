@@ -24,5 +24,8 @@ val GreenSecondary = Color(0x33226B42)
 //Café para bordes, divisores y detalles.
 val BrownSecondary = Color(0xFF753A10)
 
+//Café más claro, para elementos inactivos
+val BrownLight = Color(0xFFA86B3D)
+
 //Amarillo para precio, ofertas y acentos importantes
 val YellowAccent = Color(0xFFFFDD70)
