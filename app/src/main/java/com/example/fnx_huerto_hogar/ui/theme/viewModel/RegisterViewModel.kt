@@ -2,6 +2,7 @@ package com.example.fnx_huerto_hogar.ui.theme.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.fnx_huerto_hogar.data.ChileLocations
 import com.example.fnx_huerto_hogar.data.model.User
 import com.example.fnx_huerto_hogar.data.model.UserRole
 import com.example.fnx_huerto_hogar.data.repository.UserRepository
@@ -11,9 +12,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class RegisterViewModel(): ViewModel() {
-
-    //Repositorio de falla
-    private val userRepository = UserRepository()
 
     //Val de los fields
     private val _name = MutableStateFlow("")
@@ -51,6 +49,19 @@ class RegisterViewModel(): ViewModel() {
 
     private val _isSuccess = MutableStateFlow(false)
     val isSuccess: StateFlow<Boolean> = _isSuccess.asStateFlow()
+
+    // Nuevos StateFlows para las listas desplegables
+    private val _regions = MutableStateFlow(ChileLocations.regions)
+    val regions: StateFlow<List<String>> = _regions.asStateFlow()
+
+    private val _communes = MutableStateFlow<List<String>>(emptyList())
+    val communes: StateFlow<List<String>> = _communes.asStateFlow()
+
+    private val _showRegionDropdown = MutableStateFlow(false)
+    val showRegionDropdown: StateFlow<Boolean> = _showRegionDropdown.asStateFlow()
+
+    private val _showCommuneDropdown = MutableStateFlow(false)
+    val showCommuneDropdown: StateFlow<Boolean> = _showCommuneDropdown.asStateFlow()
 
     //Funciones que actualizan los Fields
     fun onNameChange(newName: String){
@@ -91,17 +102,38 @@ class RegisterViewModel(): ViewModel() {
     fun onComunaChange(newComuna: String) {
         _comuna.value = newComuna
         _errorMessage.value = null
+        _showCommuneDropdown.value = false
     }
 
     fun onRegionChange(newRegion: String) {
         _region.value = newRegion
         _errorMessage.value = null
+
+        val communesForRegion = ChileLocations.communesByRegion[newRegion] ?: emptyList()
+        _communes.value = communesForRegion
+
+        if (_comuna.value.isNotBlank() && !communesForRegion.contains(_comuna.value)) {
+            _comuna.value = ""
+        }
+
+        _showRegionDropdown.value = false
+    }
+
+    // Funciones para mostrar/ocultar dropdowns
+    fun onRegionDropdownToggle(show: Boolean) {
+        _showRegionDropdown.value = show
+        if (show) _showCommuneDropdown.value = false
+    }
+
+    fun onCommuneDropdownToggle(show: Boolean) {
+        _showCommuneDropdown.value = show
+        if (show) _showRegionDropdown.value = false
     }
 
     private fun isValidEmail(email: String): Boolean {
         val emailLowerCase = email.trim().lowercase()
         return emailLowerCase.endsWith("@duoc.cl") ||
-                emailLowerCase.endsWith("profesor.duoc.cl") ||
+                emailLowerCase.endsWith("@profesor.duoc.cl") ||
                 emailLowerCase.endsWith("@gmail.com")
     }
 
@@ -190,7 +222,7 @@ class RegisterViewModel(): ViewModel() {
                     rol = UserRole.USER
                 )
 
-                val success = userRepository.registerUser(user)
+                val success = UserRepository.registerUser(user)
                 if (success) {
                     _isSuccess.value = true
                     clearForm()
@@ -217,11 +249,8 @@ class RegisterViewModel(): ViewModel() {
         _region.value = ""
         _errorMessage.value = null
         _isSuccess.value = false
+        _communes.value = emptyList()
+        _showRegionDropdown.value = false
+        _showCommuneDropdown.value = false
     }
-
-
-
-
-
-
 }

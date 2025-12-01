@@ -4,7 +4,7 @@ import com.example.fnx_huerto_hogar.data.model.User
 import com.example.fnx_huerto_hogar.data.model.UserRole
 import kotlinx.coroutines.delay
 
-class UserRepository {
+object UserRepository {
 
     suspend fun registerUser(user: User): Boolean {
         //delay(1000)

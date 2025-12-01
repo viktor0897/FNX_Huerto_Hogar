@@ -44,6 +44,12 @@ fun RegisterScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isSuccess by viewModel.isSuccess.collectAsState()
 
+    // Nuevos estados para los dropdowns
+    val regions by viewModel.regions.collectAsState()
+    val communes by viewModel.communes.collectAsState()
+    val showRegionDropdown by viewModel.showRegionDropdown.collectAsState()
+    val showCommuneDropdown by viewModel.showCommuneDropdown.collectAsState()
+
     // Navegar si el registro fue exitoso
     LaunchedEffect(isSuccess) {
         if (isSuccess) {
@@ -63,6 +69,7 @@ fun RegisterScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .imePadding()
                 .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -105,7 +112,13 @@ fun RegisterScreen(
                 comuna = comuna,
                 onComunaChange = viewModel::onComunaChange,
                 region = region,
-                onRegionChange = viewModel::onRegionChange
+                onRegionChange = viewModel::onRegionChange,
+                regions = regions,
+                communes = communes,
+                showRegionDropdown = showRegionDropdown,
+                showCommuneDropdown = showCommuneDropdown,
+                onRegionDropdownToggle = viewModel::onRegionDropdownToggle,
+                onCommuneDropdownToggle = viewModel::onCommuneDropdownToggle
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -178,9 +191,9 @@ fun RegisterScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Registrando")
                     }
-                }else if (isSuccess){
+                } else if (isSuccess) {
                     Text("Registrado")
-                }else {
+                } else {
                     Text(
                         text = "Registrarse",
                         style = MaterialTheme.typography.bodyLarge,
@@ -189,13 +202,13 @@ fun RegisterScreen(
                 }
             }
 
-            //Para ir al login si ya se tiene cuenta
-            if (isSuccess){
+            // Para ir al login si ya se tiene cuenta
+            if (isSuccess) {
                 Spacer(modifier = Modifier.height(16.dp))
                 TextButton(
                     onClick = {
-                        navController.navigate(AppScreens.LoginScreen.route){
-                            popUpTo(AppScreens.RegisterScreen.route){ inclusive = true }
+                        navController.navigate(AppScreens.LoginScreen.route) {
+                            popUpTo(AppScreens.RegisterScreen.route) { inclusive = true }
                         }
                     }
                 ) {
@@ -206,6 +219,8 @@ fun RegisterScreen(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }
@@ -230,7 +245,13 @@ fun CamposRegistro(
     comuna: String,
     onComunaChange: (String) -> Unit,
     region: String,
-    onRegionChange: (String) -> Unit
+    onRegionChange: (String) -> Unit,
+    regions: List<String>,
+    communes: List<String>,
+    showRegionDropdown: Boolean,
+    showCommuneDropdown: Boolean,
+    onRegionDropdownToggle: (Boolean) -> Unit,
+    onCommuneDropdownToggle: (Boolean) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -290,7 +311,7 @@ fun CamposRegistro(
             shape = RoundedCornerShape(12.dp)
         )
 
-        // Campo Contraseña (FILA INDIVIDUAL)
+        // Campo Contraseña
         OutlinedTextField(
             value = password,
             onValueChange = onPasswordChange,
@@ -308,7 +329,7 @@ fun CamposRegistro(
             shape = RoundedCornerShape(12.dp)
         )
 
-        // Campo Confirmar Contraseña (FILA INDIVIDUAL)
+        // Campo Confirmar Contraseña
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = onConfirmPasswordChange,
@@ -360,38 +381,124 @@ fun CamposRegistro(
             shape = RoundedCornerShape(12.dp)
         )
 
-        // Fila para comuna y región
+        // Fila para región y comuna con ExposedDropdownMenu - SOLUCIÓN FUNCIONAL
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Campo Comuna
-            OutlinedTextField(
-                value = comuna,
-                onValueChange = onComunaChange,
-                label = { Text("Comuna") },
-                modifier = Modifier.weight(1f),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = GreenPrimary,
-                    focusedLabelColor = GreenPrimary,
-                    cursorColor = GreenPrimary
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
+            // Dropdown para Región - USANDO ExposedDropdownMenuBox
+            Box(
+                modifier = Modifier.weight(1f)
+            ) {
+                ExposedDropdownMenuBox(
+                    expanded = showRegionDropdown,
+                    onExpandedChange = { onRegionDropdownToggle(!showRegionDropdown) }
+                ) {
+                    OutlinedTextField(
+                        value = region,
+                        onValueChange = { },
+                        label = { Text("Región") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = showRegionDropdown)
+                        },
+                        readOnly = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = GreenPrimary,
+                            focusedLabelColor = GreenPrimary,
+                            cursorColor = GreenPrimary
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
 
-            // Campo Región
-            OutlinedTextField(
-                value = region,
-                onValueChange = onRegionChange,
-                label = { Text("Región") },
-                modifier = Modifier.weight(1f),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = GreenPrimary,
-                    focusedLabelColor = GreenPrimary,
-                    cursorColor = GreenPrimary
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
+                    ExposedDropdownMenu(
+                        expanded = showRegionDropdown,
+                        onDismissRequest = { onRegionDropdownToggle(false) },
+                        modifier = Modifier
+                            .heightIn(max = 200.dp)
+                    ) {
+                        regions.forEach { regionOption ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = regionOption,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                },
+                                onClick = {
+                                    onRegionChange(regionOption)
+                                    onRegionDropdownToggle(false)
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Dropdown para Comuna - USANDO ExposedDropdownMenuBox
+            Box(
+                modifier = Modifier.weight(1f)
+            ) {
+                ExposedDropdownMenuBox(
+                    expanded = showCommuneDropdown,
+                    onExpandedChange = {
+                        if (region.isNotEmpty()) {
+                            onCommuneDropdownToggle(!showCommuneDropdown)
+                        }
+                    }
+                ) {
+                    OutlinedTextField(
+                        value = comuna,
+                        onValueChange = { },
+                        label = { Text("Comuna") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCommuneDropdown)
+                        },
+                        readOnly = true,
+                        enabled = region.isNotEmpty(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = if (region.isNotEmpty()) GreenPrimary else Color.Gray,
+                            focusedLabelColor = if (region.isNotEmpty()) GreenPrimary else Color.Gray,
+                            cursorColor = GreenPrimary,
+                            disabledBorderColor = Color.Gray,
+                            disabledLabelColor = Color.Gray,
+                            disabledTextColor = Color.Gray
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    if (region.isNotEmpty()) {
+                        ExposedDropdownMenu(
+                            expanded = showCommuneDropdown,
+                            onDismissRequest = { onCommuneDropdownToggle(false) },
+                            modifier = Modifier
+                                .heightIn(max = 200.dp)
+                        ) {
+                            communes.forEach { communeOption ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = communeOption,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    },
+                                    onClick = {
+                                        onComunaChange(communeOption)
+                                        onCommuneDropdownToggle(false)
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -3,7 +3,6 @@ package com.example.fnx_huerto_hogar.ui.theme.viewModel
 import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.fnx_huerto_hogar.data.model.User
 import com.example.fnx_huerto_hogar.data.repository.UserRepository
 import kotlinx.coroutines.delay
@@ -12,9 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class LoginViewModel(
-    private val userRepository: UserRepository = UserRepository()
-): ViewModel() {
+class LoginViewModel(): ViewModel() {
 
     //Estados del viewmodel
     private val _email = MutableStateFlow("")
@@ -64,7 +61,7 @@ class LoginViewModel(
 
             try {
                 delay(1500)
-                val user = userRepository.login(_email.value, _password.value)
+                val user = UserRepository.login(_email.value, _password.value)
                 if (user != null) {
                     //Login Exitoso
                     _currentUser.value = user
