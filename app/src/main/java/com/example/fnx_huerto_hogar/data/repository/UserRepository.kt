@@ -9,7 +9,7 @@ object UserRepository {
     //Variable que guarda el usuario actual
     private var currentUser: User? = null
         private set //Todos pueden ver quien vive en la casa (CurrentUser) Pero solo el dueño puede
-                    //Cambiar quien vive en la casa (modificarlo)
+    //Cambiar quien vive en la casa (modificarlo)
 
     //Registrao
     suspend fun registerUser(user: User): Boolean {
@@ -37,7 +37,7 @@ object UserRepository {
         return user
     }
 
-    fun logout(){
+    fun logout() {
         currentUser = null
     }
 
@@ -67,9 +67,64 @@ object UserRepository {
     }
 
     //Cogerlos por Email
-    suspend fun getUserByEmail(email: String): User?{
+    suspend fun getUserByEmail(email: String): User? {
         delay(400)
-        return users.find {it.email == email}
+        return users.find { it.email == email }
+    }
+
+    //Actualizar Email
+    suspend fun updateUserEmail(oldEmail: String, newEmail: String, password: String): Boolean {
+        delay(500)
+        return try {
+            val user = users.find { it.email == oldEmail && it.password == password }
+            if (user != null) {
+                //Verificar que el nuevo email no esté en uso
+                val emailExist = users.any { it.email == newEmail && it.email != oldEmail }
+                if (emailExist) {
+                    return false
+                }
+
+                //Actualizar email
+                val updatedUser = user.copy(email = newEmail)
+                users.remove(user)
+                users.add(updatedUser)
+
+                //Actualizar currentUser si es el usuario actual
+                if (currentUser?.email == oldEmail) {
+                    currentUser = updatedUser
+                }
+                return true
+            }
+            false
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    //Actualizar contraseña
+    suspend fun updateUserPassword(
+        email: String,
+        currentPassword: String,
+        newPassword: String
+    ): Boolean {
+        delay(500)
+        return try {
+            val user = users.find { it.email == email && it.password == currentPassword }
+            if (user != null) {
+                val updateUser = user.copy(password = newPassword)
+                users.remove(user)
+                users.add(updateUser)
+
+                //Actualizar currentUser si es el usuario actual
+                if (currentUser?.email == email) {
+                    currentUser = updateUser
+                }
+                return true
+            }
+            false
+        } catch (e: Exception) {
+            false
+        }
     }
 
     //Lista de usuarios seteados
