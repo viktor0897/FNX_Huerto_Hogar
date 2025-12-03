@@ -4,13 +4,20 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.fnx_huerto_hogar.ui.theme.BrownLight
+import com.example.fnx_huerto_hogar.ui.theme.BrownSecondary
+import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
+import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
+import com.example.fnx_huerto_hogar.ui.theme.GreenSecondary
 
 @Composable
 fun MainBottomBar(
@@ -19,7 +26,9 @@ fun MainBottomBar(
 ){
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
-    BottomAppBar {
+    BottomAppBar(
+        containerColor = GrayBackground
+    ){
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
@@ -27,11 +36,11 @@ fun MainBottomBar(
         ) {
 
             val bottomBarItems = listOf(
-                MainBottomBarClass.HOME,
+                MainBottomBarClass.MENU,
                 MainBottomBarClass.CATALOGO,
+                MainBottomBarClass.HOME,
                 MainBottomBarClass.CARRITO,
-                MainBottomBarClass.FAVORITOS,
-                MainBottomBarClass.MENU
+                MainBottomBarClass.FAVORITOS
             )
 
             bottomBarItems.forEach {destination ->
@@ -57,7 +66,14 @@ fun MainBottomBar(
                     },
                     label = {
                         Text(destination.label)
-                    }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = GreenPrimary,
+                        selectedTextColor = GreenPrimary,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurface,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurface,
+                        indicatorColor = GreenSecondary.copy(alpha = 0.3f)
+                    )
                 )
             }
         }

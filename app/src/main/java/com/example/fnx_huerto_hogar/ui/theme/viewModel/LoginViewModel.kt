@@ -11,7 +11,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class LoginViewModel(): ViewModel() {
+class LoginViewModel(
+    private val userRepository: UserRepository = UserRepository
+): ViewModel() {
 
     //Estados del viewmodel
     private val _email = MutableStateFlow("")
