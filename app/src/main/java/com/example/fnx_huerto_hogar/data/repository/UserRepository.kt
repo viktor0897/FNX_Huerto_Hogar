@@ -13,7 +13,7 @@ object UserRepository {
 
     //Registrao
     suspend fun registerUser(user: User): Boolean {
-        delay(1000)
+        //delay(1000)
         return try {
             val userExist = users.find { it.email == user.email }
             if (userExist != null) {
@@ -46,13 +46,13 @@ object UserRepository {
 
     //Coger todos
     suspend fun getAllUsers(): List<User> {
-        delay(500)
+        //delay(500)
         return users.toList()
     }
 
     //Deletear
     suspend fun deleteUser(email: String): Boolean {
-        delay(300)
+        //delay(300)
         return try {
             val userExist = users.find { it.email == email }
             if (userExist != null) {

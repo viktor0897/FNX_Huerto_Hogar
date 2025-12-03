@@ -89,7 +89,7 @@ fun DetalleProductoScreen(
     // Snackbar de mensajes
     LaunchedEffect(message) {
         if (message.isNotEmpty()) {
-            // El mensaje se muestra automáticamente
+
         }
     }
 
