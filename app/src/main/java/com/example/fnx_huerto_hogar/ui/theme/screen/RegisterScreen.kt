@@ -22,6 +22,7 @@ import com.example.fnx_huerto_hogar.navigate.AppScreens
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
 import com.example.fnx_huerto_hogar.ui.theme.viewModel.RegisterViewModel
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,11 +44,9 @@ fun RegisterScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isSuccess by viewModel.isSuccess.collectAsState()
 
-    // Nuevos estados para los dropdowns
-    val regions by viewModel.regions.collectAsState()
-    val communes by viewModel.communes.collectAsState()
-    val showRegionDropdown by viewModel.showRegionDropdown.collectAsState()
-    val showCommuneDropdown by viewModel.showCommuneDropdown.collectAsState()
+    // Estados locales para los dropdowns (simplificado)
+    var expandedRegion by remember { mutableStateOf(false) }
+    var expandedComuna by remember { mutableStateOf(false) }
 
     // Navegar si el registro fue exitoso
     LaunchedEffect(isSuccess) {
@@ -68,7 +67,6 @@ fun RegisterScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .imePadding()
                 .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -112,12 +110,10 @@ fun RegisterScreen(
                 onComunaChange = viewModel::onComunaChange,
                 region = region,
                 onRegionChange = viewModel::onRegionChange,
-                regions = regions,
-                communes = communes,
-                showRegionDropdown = showRegionDropdown,
-                showCommuneDropdown = showCommuneDropdown,
-                onRegionDropdownToggle = viewModel::onRegionDropdownToggle,
-                onCommuneDropdownToggle = viewModel::onCommuneDropdownToggle
+                expandedRegion = expandedRegion,
+                expandedComuna = expandedComuna,
+                onRegionExpandedChange = { expandedRegion = it },
+                onComunaExpandedChange = { expandedComuna = it }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -245,13 +241,15 @@ fun CamposRegistro(
     onComunaChange: (String) -> Unit,
     region: String,
     onRegionChange: (String) -> Unit,
-    regions: List<String>,
-    communes: List<String>,
-    showRegionDropdown: Boolean,
-    showCommuneDropdown: Boolean,
-    onRegionDropdownToggle: (Boolean) -> Unit,
-    onCommuneDropdownToggle: (Boolean) -> Unit
+    expandedRegion: Boolean,
+    expandedComuna: Boolean,
+    onRegionExpandedChange: (Boolean) -> Unit,
+    onComunaExpandedChange: (Boolean) -> Unit
 ) {
+    // Obtener las listas directamente del objeto ChileLocations
+    val regions = com.example.fnx_huerto_hogar.data.ChileLocations.regions
+    val communes = com.example.fnx_huerto_hogar.data.ChileLocations.communesByRegion[region] ?: emptyList()
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -380,25 +378,25 @@ fun CamposRegistro(
             shape = RoundedCornerShape(12.dp)
         )
 
-        // Fila para región y comuna con ExposedDropdownMenu - SOLUCIÓN FUNCIONAL
+        // Fila para región y comuna con dropdowns
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Dropdown para Región - USANDO ExposedDropdownMenuBox
+            // Dropdown para Región
             Box(
                 modifier = Modifier.weight(1f)
             ) {
                 ExposedDropdownMenuBox(
-                    expanded = showRegionDropdown,
-                    onExpandedChange = { onRegionDropdownToggle(!showRegionDropdown) }
+                    expanded = expandedRegion,
+                    onExpandedChange = onRegionExpandedChange
                 ) {
                     OutlinedTextField(
                         value = region,
                         onValueChange = { },
                         label = { Text("Región") },
                         trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = showRegionDropdown)
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedRegion)
                         },
                         readOnly = true,
                         modifier = Modifier
@@ -413,39 +411,31 @@ fun CamposRegistro(
                     )
 
                     ExposedDropdownMenu(
-                        expanded = showRegionDropdown,
-                        onDismissRequest = { onRegionDropdownToggle(false) },
-                        modifier = Modifier
-                            .heightIn(max = 200.dp)
+                        expanded = expandedRegion,
+                        onDismissRequest = { onRegionExpandedChange(false) }
                     ) {
                         regions.forEach { regionOption ->
                             DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = regionOption,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                },
+                                text = { Text(regionOption) },
                                 onClick = {
                                     onRegionChange(regionOption)
-                                    onRegionDropdownToggle(false)
-                                },
-                                modifier = Modifier.fillMaxWidth()
+                                    onRegionExpandedChange(false)
+                                }
                             )
                         }
                     }
                 }
             }
 
-            // Dropdown para Comuna - USANDO ExposedDropdownMenuBox
+            // Dropdown para Comuna
             Box(
                 modifier = Modifier.weight(1f)
             ) {
                 ExposedDropdownMenuBox(
-                    expanded = showCommuneDropdown,
-                    onExpandedChange = {
+                    expanded = expandedComuna,
+                    onExpandedChange = { newValue ->
                         if (region.isNotEmpty()) {
-                            onCommuneDropdownToggle(!showCommuneDropdown)
+                            onComunaExpandedChange(newValue)
                         }
                     }
                 ) {
@@ -454,7 +444,7 @@ fun CamposRegistro(
                         onValueChange = { },
                         label = { Text("Comuna") },
                         trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCommuneDropdown)
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedComuna)
                         },
                         readOnly = true,
                         enabled = region.isNotEmpty(),
@@ -472,26 +462,18 @@ fun CamposRegistro(
                         shape = RoundedCornerShape(12.dp)
                     )
 
-                    if (region.isNotEmpty()) {
+                    if (region.isNotEmpty() && expandedComuna) {
                         ExposedDropdownMenu(
-                            expanded = showCommuneDropdown,
-                            onDismissRequest = { onCommuneDropdownToggle(false) },
-                            modifier = Modifier
-                                .heightIn(max = 200.dp)
+                            expanded = expandedComuna,
+                            onDismissRequest = { onComunaExpandedChange(false) }
                         ) {
                             communes.forEach { communeOption ->
                                 DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            text = communeOption,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    },
+                                    text = { Text(communeOption) },
                                     onClick = {
                                         onComunaChange(communeOption)
-                                        onCommuneDropdownToggle(false)
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
+                                        onComunaExpandedChange(false)
+                                    }
                                 )
                             }
                         }
