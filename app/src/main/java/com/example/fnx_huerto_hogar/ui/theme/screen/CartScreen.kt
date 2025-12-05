@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -57,6 +58,7 @@ import com.example.fnx_huerto_hogar.ui.theme.YellowAccent
 import com.example.fnx_huerto_hogar.ui.theme.viewModel.CartViewModel
 import com.example.fnx_huerto_hogar.data.model.CartItem
 import androidx.compose.material3.Snackbar
+import com.example.fnx_huerto_hogar.navigate.AppScreens
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -143,9 +145,7 @@ fun CartScreen(
                     totalItems = totalItems,
                     totalPrice = totalPrice,
                     onClearCart = viewModel::clearCart,
-                    onCheckout = {
-                        viewModel.clearMessage()
-                    }
+                    navController = navController
                 )
             }
         }
@@ -314,7 +314,7 @@ fun CartSummary(
     totalItems: Int,
     totalPrice: Double,
     onClearCart: () -> Unit,
-    onCheckout: () -> Unit
+    navController: NavController
 ) {
     Card(
         modifier = Modifier
@@ -405,9 +405,11 @@ fun CartSummary(
                 }
 
                 Button(
-                    onClick = onCheckout,
+                    onClick = {
+                        navController.navigate(AppScreens.CheckoutScreen.route)
+                    },
                     modifier = Modifier.weight(2f),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                    colors = ButtonDefaults.buttonColors(
                         containerColor = GreenPrimary
                     ),
                     shape = RoundedCornerShape(8.dp)

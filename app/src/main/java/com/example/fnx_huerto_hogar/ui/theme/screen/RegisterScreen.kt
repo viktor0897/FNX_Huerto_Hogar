@@ -22,6 +22,11 @@ import com.example.fnx_huerto_hogar.navigate.AppScreens
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
 import com.example.fnx_huerto_hogar.ui.theme.viewModel.RegisterViewModel
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.layout.heightIn
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +51,6 @@ fun RegisterScreen(
     // Nuevos estados para los dropdowns
     val regions by viewModel.regions.collectAsState()
     val communes by viewModel.communes.collectAsState()
-    val showRegionDropdown by viewModel.showRegionDropdown.collectAsState()
     val showCommuneDropdown by viewModel.showCommuneDropdown.collectAsState()
 
     // Navegar si el registro fue exitoso
