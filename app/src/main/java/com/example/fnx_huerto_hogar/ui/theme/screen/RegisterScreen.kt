@@ -18,6 +18,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.delay
+import androidx.compose.foundation.text.KeyboardOptions
 import com.example.fnx_huerto_hogar.navigate.AppScreens
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
@@ -47,7 +49,6 @@ fun RegisterScreen(
     // Nuevos estados para los dropdowns
     val regions by viewModel.regions.collectAsState()
     val communes by viewModel.communes.collectAsState()
-    val showRegionDropdown by viewModel.showRegionDropdown.collectAsState()
     val showCommuneDropdown by viewModel.showCommuneDropdown.collectAsState()
 
     // Navegar si el registro fue exitoso
