@@ -28,8 +28,7 @@ import com.example.fnx_huerto_hogar.ui.theme.BrownSecondary
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
 import com.example.fnx_huerto_hogar.ui.theme.GreenSecondary
-//import com.example.fnx_huerto_hogar.ui.theme.screen.CameraCaptureScreen
-import com.example.fnx_huerto_hogar.ui.theme.screen.CameraCaptureScreen
+import com.example.fnx_huerto_hogar.ui.theme.screen.*
 import kotlinx.coroutines.launch
 
 @Composable
