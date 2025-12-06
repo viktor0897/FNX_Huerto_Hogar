@@ -2,9 +2,11 @@ package com.example.fnx_huerto_hogar.ui.theme.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.fnx_huerto_hogar.data.ChileLocations
 import com.example.fnx_huerto_hogar.data.model.User
 import com.example.fnx_huerto_hogar.data.model.UserRole
 import com.example.fnx_huerto_hogar.data.repository.UserRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,10 +14,9 @@ import kotlinx.coroutines.launch
 
 class RegisterViewModel : ViewModel() {
 
-    //Repositorio de falla
     private val userRepository = UserRepository
 
-    //Val de los fields
+    // Estados para los campos
     private val _name = MutableStateFlow("")
     val name: StateFlow<String> = _name.asStateFlow()
 
@@ -52,7 +53,20 @@ class RegisterViewModel : ViewModel() {
     private val _isSuccess = MutableStateFlow(false)
     val isSuccess: StateFlow<Boolean> = _isSuccess.asStateFlow()
 
-    //Funciones que actualizan los Fields
+    // Estados para los dropdowns
+    private val _regions = MutableStateFlow<List<String>>(ChileLocations.regions)
+    val regions: StateFlow<List<String>> = _regions.asStateFlow()
+
+    private val _communes = MutableStateFlow<List<String>>(emptyList())
+    val communes: StateFlow<List<String>> = _communes.asStateFlow()
+
+    private val _showRegionDropdown = MutableStateFlow(false)
+    val showRegionDropdown: StateFlow<Boolean> = _showRegionDropdown.asStateFlow()
+
+    private val _showCommuneDropdown = MutableStateFlow(false)
+    val showCommuneDropdown: StateFlow<Boolean> = _showCommuneDropdown.asStateFlow()
+
+    // Funciones para actualizar campos
     fun onNameChange(newName: String){
         _name.value = newName
         _errorMessage.value = null
@@ -91,11 +105,26 @@ class RegisterViewModel : ViewModel() {
     fun onComunaChange(newComuna: String) {
         _comuna.value = newComuna
         _errorMessage.value = null
+        _showCommuneDropdown.value = false
     }
 
     fun onRegionChange(newRegion: String) {
         _region.value = newRegion
+        _comuna.value = "" // Resetear comuna cuando cambia la región
+        _communes.value = ChileLocations.communesByRegion[newRegion] ?: emptyList()
         _errorMessage.value = null
+        _showRegionDropdown.value = false
+    }
+
+    // Funciones para controlar dropdowns
+    fun onRegionDropdownToggle(expanded: Boolean) {
+        _showRegionDropdown.value = expanded
+    }
+
+    fun onCommuneDropdownToggle(expanded: Boolean) {
+        if (_region.value.isNotEmpty()) {
+            _showCommuneDropdown.value = expanded
+        }
     }
 
     private fun isValidEmail(email: String): Boolean {
@@ -105,8 +134,9 @@ class RegisterViewModel : ViewModel() {
                 emailLowerCase.endsWith("@gmail.com")
     }
 
-    //Función para registro más validaciones de rellenación de campos
+    // Función de registro
     fun register() {
+        // Validaciones...
         if (_name.value.isBlank()) {
             _errorMessage.value = "El nombre es obligatorio"
             return
@@ -172,7 +202,7 @@ class RegisterViewModel : ViewModel() {
             return
         }
 
-        //Si pasamos las validaciones
+        // Si pasamos las validaciones
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
@@ -192,6 +222,7 @@ class RegisterViewModel : ViewModel() {
                 val success = userRepository.registerUser(user)
                 if (success) {
                     _isSuccess.value = true
+                    delay(1500)
                     clearForm()
                 } else {
                     _errorMessage.value = "El correo ya está registrado"
@@ -214,13 +245,10 @@ class RegisterViewModel : ViewModel() {
         _address.value = ""
         _comuna.value = ""
         _region.value = ""
+        _communes.value = emptyList()
         _errorMessage.value = null
         _isSuccess.value = false
+        _showRegionDropdown.value = false
+        _showCommuneDropdown.value = false
     }
-
-
-
-
-
-
 }

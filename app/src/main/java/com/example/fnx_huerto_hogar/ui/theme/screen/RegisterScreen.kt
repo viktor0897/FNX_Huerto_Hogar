@@ -18,10 +18,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.delay
+import androidx.compose.foundation.text.KeyboardOptions
 import com.example.fnx_huerto_hogar.navigate.AppScreens
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
 import com.example.fnx_huerto_hogar.ui.theme.viewModel.RegisterViewModel
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
