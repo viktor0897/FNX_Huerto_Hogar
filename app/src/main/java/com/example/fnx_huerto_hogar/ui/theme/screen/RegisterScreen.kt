@@ -18,8 +18,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import kotlinx.coroutines.delay
-import androidx.compose.foundation.text.KeyboardOptions
 import com.example.fnx_huerto_hogar.navigate.AppScreens
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
@@ -49,6 +47,7 @@ fun RegisterScreen(
     // Nuevos estados para los dropdowns
     val regions by viewModel.regions.collectAsState()
     val communes by viewModel.communes.collectAsState()
+    val showRegionDropdown by viewModel.showRegionDropdown.collectAsState()
     val showCommuneDropdown by viewModel.showCommuneDropdown.collectAsState()
 
     // Navegar si el registro fue exitoso
@@ -382,12 +381,12 @@ fun CamposRegistro(
             shape = RoundedCornerShape(12.dp)
         )
 
-        // Fila para región y comuna con ExposedDropdownMenu - SOLUCIÓN FUNCIONAL
+        // Fila para región y comuna con ExposedDropdownMenu
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Dropdown para Región - USANDO ExposedDropdownMenuBox
+            // Dropdown para Región
             Box(
                 modifier = Modifier.weight(1f)
             ) {
@@ -398,11 +397,11 @@ fun CamposRegistro(
                     OutlinedTextField(
                         value = region,
                         onValueChange = { },
-                        label = { Text("Región") },
+                        label = { Text("Región *") },
+                        readOnly = true,
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = showRegionDropdown)
                         },
-                        readOnly = true,
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(),
@@ -420,26 +419,27 @@ fun CamposRegistro(
                         modifier = Modifier
                             .heightIn(max = 200.dp)
                     ) {
-                        regions.forEach { regionOption ->
+                        if (regions.isEmpty()) {
                             DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = regionOption,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                },
-                                onClick = {
-                                    onRegionChange(regionOption)
-                                    onRegionDropdownToggle(false)
-                                },
-                                modifier = Modifier.fillMaxWidth()
+                                text = { Text("Cargando...") },
+                                onClick = { }
                             )
+                        } else {
+                            regions.forEach { regionOption ->
+                                DropdownMenuItem(
+                                    text = { Text(regionOption) },
+                                    onClick = {
+                                        onRegionChange(regionOption)
+                                        onRegionDropdownToggle(false)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
             }
 
-            // Dropdown para Comuna - USANDO ExposedDropdownMenuBox
+            // Dropdown para Comuna
             Box(
                 modifier = Modifier.weight(1f)
             ) {
@@ -454,19 +454,19 @@ fun CamposRegistro(
                     OutlinedTextField(
                         value = comuna,
                         onValueChange = { },
-                        label = { Text("Comuna") },
+                        label = { Text("Comuna *") },
+                        readOnly = true,
+                        enabled = region.isNotEmpty(),
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = showCommuneDropdown)
                         },
-                        readOnly = true,
-                        enabled = region.isNotEmpty(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = if (region.isNotEmpty()) GreenPrimary else Color.Gray,
                             focusedLabelColor = if (region.isNotEmpty()) GreenPrimary else Color.Gray,
-                            cursorColor = GreenPrimary,
+                            cursorColor = if (region.isNotEmpty()) GreenPrimary else Color.Gray,
                             disabledBorderColor = Color.Gray,
                             disabledLabelColor = Color.Gray,
                             disabledTextColor = Color.Gray
@@ -481,20 +481,21 @@ fun CamposRegistro(
                             modifier = Modifier
                                 .heightIn(max = 200.dp)
                         ) {
-                            communes.forEach { communeOption ->
+                            if (communes.isEmpty()) {
                                 DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            text = communeOption,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    },
-                                    onClick = {
-                                        onComunaChange(communeOption)
-                                        onCommuneDropdownToggle(false)
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
+                                    text = { Text("Cargando...") },
+                                    onClick = { }
                                 )
+                            } else {
+                                communes.forEach { communeOption ->
+                                    DropdownMenuItem(
+                                        text = { Text(communeOption) },
+                                        onClick = {
+                                            onComunaChange(communeOption)
+                                            onCommuneDropdownToggle(false)
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
