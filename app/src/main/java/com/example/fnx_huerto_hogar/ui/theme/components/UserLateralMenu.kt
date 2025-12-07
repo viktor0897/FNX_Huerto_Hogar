@@ -16,11 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.fnx_huerto_hogar.R
 import com.example.fnx_huerto_hogar.data.model.User
@@ -29,47 +30,50 @@ import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
 import com.example.fnx_huerto_hogar.ui.theme.GreenSecondary
 import com.example.fnx_huerto_hogar.ui.theme.screen.*
-import kotlinx.coroutines.launch
+import com.example.fnx_huerto_hogar.ui.theme.screen.CameraCaptureScreen
+import com.example.fnx_huerto_hogar.ui.theme.viewModel.UserViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun UserLateralMenu(
     currentUser: User,
     onLogoutClick: () -> Unit,
     onSettingsClick: () -> Unit,
-    onProfilePhotoUpdated: (Uri) -> Unit, // Nuevo callback
-    modifier: Modifier = Modifier
+    navController: NavController,
+    onCameraClick: () -> Unit
 ) {
-    var showCameraDialog by remember { mutableStateOf(false) }
-    var profileImageUri by remember { mutableStateOf<Uri?>(null) }
+    // ViewModel
+    val userViewModel: UserViewModel = viewModel()
 
-    // Guardar la URI cuando se actualice
-    LaunchedEffect(profileImageUri) {
-        profileImageUri?.let { uri ->
-            onProfilePhotoUpdated(uri)
-        }
-    }
+    // Observa cambios en el usuario del ViewModel
+    val currentUserState by userViewModel.currentUser.collectAsStateWithLifecycle()
+
+    // Usa el usuario del ViewModel si existe, sino usa el que viene como parámetro
+    val displayUser = currentUserState ?: currentUser
 
     ModalDrawerSheet(
         drawerContainerColor = GrayBackground,
-        modifier = modifier
+        modifier = Modifier
     ) {
-        // Encabezado con foto circular
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Contenedor para la foto de perfil con overlay
             Box(
                 modifier = Modifier
                     .size(120.dp)
-                    .clickable { showCameraDialog = true }
+                    .clickable {
+                        onCameraClick()
+                    }
             ) {
-                // Foto de perfil (usar URI si existe, sino la imagen por defecto)
-                if (profileImageUri != null) {
+                // Usa la foto del usuario
+                if (displayUser.profilePicture != null) {
                     Image(
-                        painter = rememberAsyncImagePainter(model = profileImageUri),
+                        painter = rememberAsyncImagePainter(
+                            model = Uri.parse(displayUser.profilePicture)
+                        ),
                         contentDescription = "Foto de perfil",
                         modifier = Modifier
                             .size(120.dp)
@@ -218,29 +222,5 @@ fun UserLateralMenu(
             },
             modifier = Modifier.padding(horizontal = 8.dp)
         )
-    }
-
-    // Diálogo de cámara
-    if (showCameraDialog) {
-        Dialog(
-            onDismissRequest = { showCameraDialog = false }
-        ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                shape = MaterialTheme.shapes.large,
-                tonalElevation = 8.dp
-            ) {
-                CameraCaptureScreen(
-                    onPhotoTaken = { uri ->
-                        profileImageUri = uri
-                        showCameraDialog = false
-                    },
-                    onCancel = { showCameraDialog = false },
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-        }
     }
 }

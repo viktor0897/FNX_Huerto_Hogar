@@ -14,6 +14,7 @@ data class User(
     val address: String,
     val comuna: String,
     val region: String,
+    val profilePicture: String? = null,
     val rol: UserRole = UserRole.USER
 )
 

@@ -14,21 +14,29 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import androidx.core.content.FileProvider
+import androidx.navigation.NavController
+import com.example.fnx_huerto_hogar.data.repository.UserRepository
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 fun CameraCaptureScreen(
-    onPhotoTaken: (Uri) -> Unit,
-    onCancel: () -> Unit = {},
-    modifier: Modifier = Modifier
+    navController: NavController
 ) {
+    val onPhotoTaken: (Uri) -> Unit = remember {{ uri ->}}
+    val onCancel: () -> Unit = remember {
+        {
+            navController.popBackStack()
+        }
+    }
+
     val context = LocalContext.current
     var hasCameraPermission by remember { mutableStateOf(false) }
     var imageCaptureUri by remember { mutableStateOf<Uri?>(null) }
@@ -61,12 +69,12 @@ fun CameraCaptureScreen(
         if (isGranted) {
             cameraLauncher.launch(fileUri)
         } else {
-            onCancel()
+            navController.popBackStack()
         }
     }
 
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -89,7 +97,8 @@ fun CameraCaptureScreen(
                 Image(
                     painter = rememberAsyncImagePainter(model = imageCaptureUri),
                     contentDescription = "Foto capturada",
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
             }
 
@@ -109,7 +118,8 @@ fun CameraCaptureScreen(
                 Button(
                     onClick = {
                         imageCaptureUri?.let { uri ->
-                            onPhotoTaken(uri)
+                            UserRepository.updateProfilePicture(uri.toString())
+                            navController.popBackStack()
                         }
                     },
                     modifier = Modifier.weight(1f)
@@ -162,10 +172,16 @@ fun CameraCaptureScreen(
 
             // Botón para cancelar
             OutlinedButton(
-                onClick = onCancel,
-                modifier = Modifier.fillMaxWidth()
+                onClick = {
+                    navController.popBackStack()
+                }
             ) {
                 Text("Cancelar")
+            }
+
+            //Abrir Cámara automáticamente al entrar
+            LaunchedEffect(Unit) {
+                permissionLauncher.launch(Manifest.permission.CAMERA)
             }
         }
     }

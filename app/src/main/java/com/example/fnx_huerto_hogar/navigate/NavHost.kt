@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.fnx_huerto_hogar.ui.theme.screen.CameraCaptureScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.CartScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.CatalogScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.FavoriteScreen
@@ -49,6 +50,10 @@ fun AppNavHost(
 
         composable(route = AppScreens.SettingsScreen.route) {
             SettingsScreen(navController = navController)
+        }
+
+        composable(route = AppScreens.CameraCaptureScreen.route){
+            CameraCaptureScreen(navController = navController)
         }
     }
 }

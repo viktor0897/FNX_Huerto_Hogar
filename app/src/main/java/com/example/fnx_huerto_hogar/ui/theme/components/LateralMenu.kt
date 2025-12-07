@@ -53,6 +53,14 @@ fun LateralMenu() {
                             drawerState.close()
                             navController.navigate(AppScreens.SettingsScreen.route)
                         }
+                    },
+                    navController = navController,
+
+                    onCameraClick = {
+                        scope.launch {
+                            drawerState.close()
+                            navController.navigate("camera_screen")
+                        }
                     }
                 )
             } else {
