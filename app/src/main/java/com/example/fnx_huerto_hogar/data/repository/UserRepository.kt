@@ -1,5 +1,6 @@
 package com.example.fnx_huerto_hogar.data.repository
 
+import android.net.Uri
 import com.example.fnx_huerto_hogar.data.model.User
 import com.example.fnx_huerto_hogar.data.model.UserRole
 import kotlinx.coroutines.delay
@@ -126,6 +127,15 @@ object UserRepository {
             false
         }
     }
+
+    fun updateProfilePicture(uriString: String) {
+        currentUser = currentUser?.copy(profilePicture = uriString)
+    }
+
+    fun getProfilePictureUri(): Uri? {
+        return currentUser?.profilePicture?.let { Uri.parse(it) }
+    }
+
 
     //Lista de usuarios seteados
     private val users = mutableListOf<User>(
