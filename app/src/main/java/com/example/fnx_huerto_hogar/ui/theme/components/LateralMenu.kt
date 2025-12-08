@@ -59,7 +59,7 @@ fun LateralMenu() {
                     onCameraClick = {
                         scope.launch {
                             drawerState.close()
-                            navController.navigate("camera_screen")
+                            navController.navigate(AppScreens.CameraCaptureScreen.route)
                         }
                     }
                 )

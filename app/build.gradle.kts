@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -40,6 +42,15 @@ android {
     }
 }
 
+android {
+    defaultConfig {
+        val localProperties = Properties()
+        rootProject.file("local.properties").inputStream().use { localProperties.load(it) }
+
+        manifestPlaceholders.put("MAPS_API_KEY", localProperties["MAPS_API_KEY"] ?: "")
+    }
+}
+
 dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.foundation)
@@ -62,8 +73,28 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
 
     //Maps
-    implementation("com.google.maps.android:maps-compose:2.1.0")
-    implementation("com.google.android.gms:play-services-maps:18.0.2")
+    val mapsComposeVersion = "6.8.0"
+    implementation("com.google.maps.android:maps-compose:$mapsComposeVersion")
+    implementation("com.google.maps.android:maps-compose-utils:$mapsComposeVersion")
+    implementation("com.google.maps.android:maps-compose-widgets:$mapsComposeVersion")
+
+    // ... otras dependencias ...
+    implementation("com.google.android.gms:play-services-location:21.0.1") // Usa la última versión
+    // Para usar .await() con tasks de Google Play Services en coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0")
+
+    implementation("androidx.activity:activity-compose:1.9.3")
+    implementation("androidx.compose.ui:ui:1.7.3")
+    implementation("androidx.compose.material3:material3:1.3.0")
+
+
+    implementation("androidx.core:core-ktx:1.12.0") // Usa la última versión
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0") // Usa la última versión
+
+    // Opcional: Para obtener la ubicación del usuario (FusedLocationProviderClient)
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0")
+
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -1,6 +1,7 @@
 package com.example.fnx_huerto_hogar.ui.theme.components
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -31,8 +32,8 @@ import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
 import com.example.fnx_huerto_hogar.ui.theme.GreenSecondary
 import com.example.fnx_huerto_hogar.ui.theme.screen.*
 import com.example.fnx_huerto_hogar.ui.theme.screen.CameraCaptureScreen
-import com.example.fnx_huerto_hogar.ui.theme.viewModel.UserViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.fnx_huerto_hogar.data.repository.UserRepository
 
 @Composable
 fun UserLateralMenu(
@@ -42,14 +43,11 @@ fun UserLateralMenu(
     navController: NavController,
     onCameraClick: () -> Unit
 ) {
-    // ViewModel
-    val userViewModel: UserViewModel = viewModel()
-
-    // Observa cambios en el usuario del ViewModel
-    val currentUserState by userViewModel.currentUser.collectAsStateWithLifecycle()
-
-    // Usa el usuario del ViewModel si existe, sino usa el que viene como parámetro
-    val displayUser = currentUserState ?: currentUser
+    // 1. Obtener la foto ACTUAL del Repository
+    val currentPhotoUri = remember {
+        // Leer la foto directamente del Repository
+        UserRepository.getCurrentUser()?.profilePicture?.let { Uri.parse(it) }
+    }
 
     ModalDrawerSheet(
         drawerContainerColor = GrayBackground,
@@ -61,19 +59,17 @@ fun UserLateralMenu(
                 .padding(horizontal = 16.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // 2. Mostrar la foto (si existe) o la imagen por defecto
             Box(
                 modifier = Modifier
                     .size(120.dp)
                     .clickable {
-                        onCameraClick()
+                        onCameraClick() // Esto navega a la pantalla de cámara
                     }
             ) {
-                // Usa la foto del usuario
-                if (displayUser.profilePicture != null) {
+                if (currentPhotoUri != null) {
                     Image(
-                        painter = rememberAsyncImagePainter(
-                            model = Uri.parse(displayUser.profilePicture)
-                        ),
+                        painter = rememberAsyncImagePainter(model = currentPhotoUri),
                         contentDescription = "Foto de perfil",
                         modifier = Modifier
                             .size(120.dp)
@@ -92,7 +88,6 @@ fun UserLateralMenu(
                         contentScale = ContentScale.Crop
                     )
                 }
-
                 // Overlay circular para indicar que es clickeable
                 Surface(
                     modifier = Modifier

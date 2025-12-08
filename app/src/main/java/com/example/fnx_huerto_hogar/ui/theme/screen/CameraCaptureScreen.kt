@@ -30,20 +30,13 @@ import java.util.*
 fun CameraCaptureScreen(
     navController: NavController
 ) {
-    val onPhotoTaken: (Uri) -> Unit = remember {{ uri ->}}
-    val onCancel: () -> Unit = remember {
-        {
-            navController.popBackStack()
-        }
-    }
-
     val context = LocalContext.current
-    var hasCameraPermission by remember { mutableStateOf(false) }
-    var imageCaptureUri by remember { mutableStateOf<Uri?>(null) }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Crear archivo temporal para la foto
+    // 1. Crear archivo para la foto
     val photoFile = remember { createImageFile(context) }
 
+    // 2. Crear URI para el archivo
     val fileUri = remember(photoFile) {
         FileProvider.getUriForFile(
             context,
@@ -52,50 +45,70 @@ fun CameraCaptureScreen(
         )
     }
 
-    // Launcher para cámara
+    // 3. Launcher para tomar foto
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            imageCaptureUri = fileUri
+            imageUri = fileUri // La foto se guardó en fileUri
         }
     }
 
-    // Launcher para permisos de cámara
+    // 4. Launcher para permisos (¡ESTE ES EL QUE MUESTRA EL DIÁLOGO!)
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        hasCameraPermission = isGranted
         if (isGranted) {
+            // Si el usuario DA PERMISO, abrir cámara
             cameraLauncher.launch(fileUri)
         } else {
+            // Si el usuario NIEGA permiso, regresar
             navController.popBackStack()
         }
     }
 
+    // 5. Al iniciar la pantalla, SOLICITAR PERMISO
+    LaunchedEffect(Unit) {
+        // Esto SÍ muestra el diálogo de permisos al usuario
+        permissionLauncher.launch(Manifest.permission.CAMERA)
+    }
+
+    // 6. Mostrar contenido según el estado
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        // Título
         Text(
             text = "Foto de Perfil",
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Vista previa SI hay foto
-        if (imageCaptureUri != null) {
+        if (imageUri == null) {
+            // Mientras esperamos permisos o foto
+            CircularProgressIndicator()
+            Text(
+                text = "Esperando permisos de cámara...",
+                modifier = Modifier.padding(top = 16.dp)
+            )
+            Text(
+                text = "Por favor, acepta el permiso cuando aparezca",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        } else {
+            // Mostrar foto tomada
             Card(
                 modifier = Modifier
-                    .size(200.dp)
-                    .padding(bottom = 16.dp),
+                    .size(250.dp)
+                    .padding(bottom = 24.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Image(
-                    painter = rememberAsyncImagePainter(model = imageCaptureUri),
+                    painter = rememberAsyncImagePainter(model = imageUri),
                     contentDescription = "Foto capturada",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -104,21 +117,30 @@ fun CameraCaptureScreen(
 
             Text(
                 text = "¡Foto tomada con éxito!",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Botones para aceptar/cancelar
+            Text(
+                text = "¿Usar esta foto para tu perfil?",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            // Botones de acción
             Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Button(
                     onClick = {
-                        imageCaptureUri?.let { uri ->
+                        imageUri?.let { uri ->
+                            // GUARDAR LA FOTO - ¡ESTO ES LO IMPORTANTE!
+                            // Convertir URI a String y guardar en Repository
                             UserRepository.updateProfilePicture(uri.toString())
+
+                            // Regresar a la pantalla anterior
                             navController.popBackStack()
                         }
                     },
@@ -129,7 +151,8 @@ fun CameraCaptureScreen(
 
                 OutlinedButton(
                     onClick = {
-                        imageCaptureUri = null
+                        // Tomar otra foto
+                        imageUri = null
                         cameraLauncher.launch(fileUri)
                     },
                     modifier = Modifier.weight(1f)
@@ -137,57 +160,22 @@ fun CameraCaptureScreen(
                     Text("Tomar otra")
                 }
             }
-        } else {
-            // Si no hay foto, mostrar instrucciones
-            Text(
-                text = "Presiona el botón para tomar foto",
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .padding(vertical = 32.dp)
-                    .fillMaxWidth()
-            )
-
-            // Botón para tomar foto
-            Button(
-                onClick = {
-                    if (hasCameraPermission) {
-                        cameraLauncher.launch(fileUri)
-                    } else {
-                        permissionLauncher.launch(Manifest.permission.CAMERA)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.large
-            ) {
-                Icon(
-                    imageVector = Icons.Default.CameraAlt,
-                    contentDescription = "Tomar foto",
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                Text("Tomar foto")
-            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón para cancelar
             OutlinedButton(
                 onClick = {
                     navController.popBackStack()
-                }
+                },
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Cancelar")
-            }
-
-            //Abrir Cámara automáticamente al entrar
-            LaunchedEffect(Unit) {
-                permissionLauncher.launch(Manifest.permission.CAMERA)
             }
         }
     }
 }
 
-// Función para crear archivo de imagen
+// Función para crear archivo de imagen (MANTENER ESTA FUNCIÓN)
 private fun createImageFile(context: Context): File {
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
