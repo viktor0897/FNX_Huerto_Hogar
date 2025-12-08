@@ -394,11 +394,11 @@ fun CamposRegistro(
                     OutlinedTextField(
                         value = region,
                         onValueChange = { },
-                        label = { Text("Región") },
+                        label = { Text("Región *") },
+                        readOnly = true,
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedRegion)
                         },
-                        readOnly = true,
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(),
@@ -414,7 +414,7 @@ fun CamposRegistro(
                         expanded = expandedRegion,
                         onDismissRequest = { onRegionExpandedChange(false) }
                     ) {
-                        regions.forEach { regionOption ->
+                        if (regions.isEmpty()) {
                             DropdownMenuItem(
                                 text = { Text(regionOption) },
                                 onClick = {
@@ -422,6 +422,16 @@ fun CamposRegistro(
                                     onRegionExpandedChange(false)
                                 }
                             )
+                        } else {
+                            regions.forEach { regionOption ->
+                                DropdownMenuItem(
+                                    text = { Text(regionOption) },
+                                    onClick = {
+                                        onRegionChange(regionOption)
+                                        onRegionDropdownToggle(false)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -442,19 +452,19 @@ fun CamposRegistro(
                     OutlinedTextField(
                         value = comuna,
                         onValueChange = { },
-                        label = { Text("Comuna") },
+                        label = { Text("Comuna *") },
+                        readOnly = true,
+                        enabled = region.isNotEmpty(),
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedComuna)
                         },
-                        readOnly = true,
-                        enabled = region.isNotEmpty(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = if (region.isNotEmpty()) GreenPrimary else Color.Gray,
                             focusedLabelColor = if (region.isNotEmpty()) GreenPrimary else Color.Gray,
-                            cursorColor = GreenPrimary,
+                            cursorColor = if (region.isNotEmpty()) GreenPrimary else Color.Gray,
                             disabledBorderColor = Color.Gray,
                             disabledLabelColor = Color.Gray,
                             disabledTextColor = Color.Gray
@@ -467,7 +477,7 @@ fun CamposRegistro(
                             expanded = expandedComuna,
                             onDismissRequest = { onComunaExpandedChange(false) }
                         ) {
-                            communes.forEach { communeOption ->
+                            if (communes.isEmpty()) {
                                 DropdownMenuItem(
                                     text = { Text(communeOption) },
                                     onClick = {
@@ -475,6 +485,16 @@ fun CamposRegistro(
                                         onComunaExpandedChange(false)
                                     }
                                 )
+                            } else {
+                                communes.forEach { communeOption ->
+                                    DropdownMenuItem(
+                                        text = { Text(communeOption) },
+                                        onClick = {
+                                            onComunaChange(communeOption)
+                                            onCommuneDropdownToggle(false)
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
