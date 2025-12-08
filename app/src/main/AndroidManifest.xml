@@ -15,6 +15,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FNX_Huerto_Hogar">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -22,10 +23,18 @@
             android:theme="@style/Theme.FNX_Huerto_Hogar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
+
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -34,9 +43,7 @@
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
-            <meta-data
-                android:name="com.google.android.geo.API_KEY"
-                android:value="${MAPS_API_KEY}" />
+
         </provider>
     </application>
     <uses-feature android:name="android.hardware.camera.any" android:required="true" />

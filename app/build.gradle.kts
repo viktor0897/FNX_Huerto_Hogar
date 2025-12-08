@@ -19,6 +19,22 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        //Leer API Key desde local.properties
+        val localProperties = Properties()
+        rootProject.file("local.properties").inputStream().use {
+            localProperties.load(it)
+        }
+
+        val mapsApiKey = localProperties["MAPS_API_KEY"] ?: ""
+
+        //Agregamos al manifest
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+
+        //Agregar al BuildConfig
+        buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
+
+
     }
 
     buildTypes {
@@ -39,6 +55,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
