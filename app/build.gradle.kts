@@ -59,15 +59,6 @@ android {
     }
 }
 
-android {
-    defaultConfig {
-        val localProperties = Properties()
-        rootProject.file("local.properties").inputStream().use { localProperties.load(it) }
-
-        manifestPlaceholders.put("MAPS_API_KEY", localProperties["MAPS_API_KEY"] ?: "")
-    }
-}
-
 dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.foundation)
@@ -90,7 +81,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
 
     //Maps
-    val mapsComposeVersion = "6.8.0"
+    val mapsComposeVersion = "4.3.0"
     implementation("com.google.maps.android:maps-compose:$mapsComposeVersion")
     implementation("com.google.maps.android:maps-compose-utils:$mapsComposeVersion")
     implementation("com.google.maps.android:maps-compose-widgets:$mapsComposeVersion")

@@ -10,4 +10,7 @@ sealed class AppScreens(val route: String) {
     object RegisterScreen : AppScreens("register_screen")
     object SettingsScreen : AppScreens("settings_screen")
     object CameraCaptureScreen : AppScreens(route = "camera_screen")
+    object GeolocalizationScreen : AppScreens(route = "geolocalization_screen")
+    object CheckoutScreen : AppScreens(route = "checkout_screen")
+
 }

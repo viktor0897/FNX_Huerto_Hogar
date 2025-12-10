@@ -44,10 +44,6 @@ fun RegisterScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isSuccess by viewModel.isSuccess.collectAsState()
 
-    // Estados locales para los dropdowns (simplificado)
-    var expandedRegion by remember { mutableStateOf(false) }
-    var expandedComuna by remember { mutableStateOf(false) }
-
     // Navegar si el registro fue exitoso
     LaunchedEffect(isSuccess) {
         if (isSuccess) {
@@ -109,11 +105,7 @@ fun RegisterScreen(
                 comuna = comuna,
                 onComunaChange = viewModel::onComunaChange,
                 region = region,
-                onRegionChange = viewModel::onRegionChange,
-                expandedRegion = expandedRegion,
-                expandedComuna = expandedComuna,
-                onRegionExpandedChange = { expandedRegion = it },
-                onComunaExpandedChange = { expandedComuna = it }
+                onRegionChange = viewModel::onRegionChange
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -240,16 +232,8 @@ fun CamposRegistro(
     comuna: String,
     onComunaChange: (String) -> Unit,
     region: String,
-    onRegionChange: (String) -> Unit,
-    expandedRegion: Boolean,
-    expandedComuna: Boolean,
-    onRegionExpandedChange: (Boolean) -> Unit,
-    onComunaExpandedChange: (Boolean) -> Unit
+    onRegionChange: (String) -> Unit
 ) {
-    // Obtener las listas directamente del objeto ChileLocations
-    val regions = com.example.fnx_huerto_hogar.data.ChileLocations.regions
-    val communes = com.example.fnx_huerto_hogar.data.ChileLocations.communesByRegion[region] ?: emptyList()
-
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -263,7 +247,7 @@ fun CamposRegistro(
             OutlinedTextField(
                 value = name,
                 onValueChange = onNameChange,
-                label = { Text("Nombre") },
+                label = { Text("Nombre *") },
                 leadingIcon = {
                     Icon(Icons.Default.Person, contentDescription = "Nombre", tint = GreenPrimary)
                 },
@@ -280,7 +264,7 @@ fun CamposRegistro(
             OutlinedTextField(
                 value = lastName,
                 onValueChange = onLastNameChange,
-                label = { Text("Apellido") },
+                label = { Text("Apellido *") },
                 modifier = Modifier.weight(1f),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = GreenPrimary,
@@ -295,7 +279,7 @@ fun CamposRegistro(
         OutlinedTextField(
             value = email,
             onValueChange = onEmailChange,
-            label = { Text("Correo electrónico") },
+            label = { Text("Correo electrónico *") },
             leadingIcon = {
                 Icon(Icons.Default.Email, contentDescription = "Email", tint = GreenPrimary)
             },
@@ -312,7 +296,7 @@ fun CamposRegistro(
         OutlinedTextField(
             value = password,
             onValueChange = onPasswordChange,
-            label = { Text("Contraseña") },
+            label = { Text("Contraseña *") },
             leadingIcon = {
                 Icon(Icons.Default.Lock, contentDescription = "Contraseña", tint = GreenPrimary)
             },
@@ -330,7 +314,7 @@ fun CamposRegistro(
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = onConfirmPasswordChange,
-            label = { Text("Confirmar Contraseña") },
+            label = { Text("Confirmar Contraseña *") },
             leadingIcon = {
                 Icon(Icons.Default.Lock, contentDescription = "Confirmar Contraseña", tint = GreenPrimary)
             },
@@ -348,7 +332,7 @@ fun CamposRegistro(
         OutlinedTextField(
             value = phone,
             onValueChange = onPhoneChange,
-            label = { Text("Teléfono") },
+            label = { Text("Teléfono *") },
             leadingIcon = {
                 Icon(Icons.Default.Phone, contentDescription = "Teléfono", tint = GreenPrimary)
             },
@@ -365,7 +349,7 @@ fun CamposRegistro(
         OutlinedTextField(
             value = address,
             onValueChange = onAddressChange,
-            label = { Text("Dirección") },
+            label = { Text("Dirección *") },
             leadingIcon = {
                 Icon(Icons.Default.Home, contentDescription = "Dirección", tint = GreenPrimary)
             },
@@ -378,128 +362,46 @@ fun CamposRegistro(
             shape = RoundedCornerShape(12.dp)
         )
 
-        // Fila para región y comuna con dropdowns
+        // Fila para región y comuna - CAMPOS DE TEXTO SIMPLES
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Dropdown para Región
-            Box(
-                modifier = Modifier.weight(1f)
-            ) {
-                ExposedDropdownMenuBox(
-                    expanded = expandedRegion,
-                    onExpandedChange = onRegionExpandedChange
-                ) {
-                    OutlinedTextField(
-                        value = region,
-                        onValueChange = { },
-                        label = { Text("Región *") },
-                        readOnly = true,
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedRegion)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = GreenPrimary,
-                            focusedLabelColor = GreenPrimary,
-                            cursorColor = GreenPrimary
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    )
+            // Campo Región (texto simple)
+            OutlinedTextField(
+                value = region,
+                onValueChange = onRegionChange,
+                label = { Text("Región *") },
+                leadingIcon = {
+                    Icon(Icons.Default.LocationOn, contentDescription = "Región", tint = GreenPrimary)
+                },
+                modifier = Modifier.weight(1f),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = GreenPrimary,
+                    focusedLabelColor = GreenPrimary,
+                    cursorColor = GreenPrimary
+                ),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
+            )
 
-                    ExposedDropdownMenu(
-                        expanded = expandedRegion,
-                        onDismissRequest = { onRegionExpandedChange(false) }
-                    ) {
-                        if (regions.isEmpty()) {
-                            DropdownMenuItem(
-                                text = { Text(regionOption) },
-                                onClick = {
-                                    onRegionChange(regionOption)
-                                    onRegionExpandedChange(false)
-                                }
-                            )
-                        } else {
-                            regions.forEach { regionOption ->
-                                DropdownMenuItem(
-                                    text = { Text(regionOption) },
-                                    onClick = {
-                                        onRegionChange(regionOption)
-                                        onRegionDropdownToggle(false)
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Dropdown para Comuna
-            Box(
-                modifier = Modifier.weight(1f)
-            ) {
-                ExposedDropdownMenuBox(
-                    expanded = expandedComuna,
-                    onExpandedChange = { newValue ->
-                        if (region.isNotEmpty()) {
-                            onComunaExpandedChange(newValue)
-                        }
-                    }
-                ) {
-                    OutlinedTextField(
-                        value = comuna,
-                        onValueChange = { },
-                        label = { Text("Comuna *") },
-                        readOnly = true,
-                        enabled = region.isNotEmpty(),
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedComuna)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = if (region.isNotEmpty()) GreenPrimary else Color.Gray,
-                            focusedLabelColor = if (region.isNotEmpty()) GreenPrimary else Color.Gray,
-                            cursorColor = if (region.isNotEmpty()) GreenPrimary else Color.Gray,
-                            disabledBorderColor = Color.Gray,
-                            disabledLabelColor = Color.Gray,
-                            disabledTextColor = Color.Gray
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-
-                    if (region.isNotEmpty() && expandedComuna) {
-                        ExposedDropdownMenu(
-                            expanded = expandedComuna,
-                            onDismissRequest = { onComunaExpandedChange(false) }
-                        ) {
-                            if (communes.isEmpty()) {
-                                DropdownMenuItem(
-                                    text = { Text(communeOption) },
-                                    onClick = {
-                                        onComunaChange(communeOption)
-                                        onComunaExpandedChange(false)
-                                    }
-                                )
-                            } else {
-                                communes.forEach { communeOption ->
-                                    DropdownMenuItem(
-                                        text = { Text(communeOption) },
-                                        onClick = {
-                                            onComunaChange(communeOption)
-                                            onCommuneDropdownToggle(false)
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            // Campo Comuna (texto simple)
+            OutlinedTextField(
+                value = comuna,
+                onValueChange = onComunaChange,
+                label = { Text("Comuna *") },
+                leadingIcon = {
+                    Icon(Icons.Default.Place, contentDescription = "Comuna", tint = GreenPrimary)
+                },
+                modifier = Modifier.weight(1f),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = GreenPrimary,
+                    focusedLabelColor = GreenPrimary,
+                    cursorColor = GreenPrimary
+                ),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
+            )
         }
     }
 }

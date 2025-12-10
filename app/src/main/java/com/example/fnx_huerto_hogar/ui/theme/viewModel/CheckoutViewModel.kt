@@ -1,6 +1,8 @@
 package com.example.fnx_huerto_hogar.ui.theme.viewModel
 
+import android.location.Location
 import android.provider.Contacts
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fnx_huerto_hogar.data.CheckoutState
@@ -8,6 +10,7 @@ import com.example.fnx_huerto_hogar.data.DeliveryType
 import com.example.fnx_huerto_hogar.data.PaymentMethod
 import com.example.fnx_huerto_hogar.data.model.CartItem
 import com.example.fnx_huerto_hogar.data.repository.UserRepository
+import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +24,14 @@ class CheckoutViewModel: ViewModel() {
 
     var cartItems: List<CartItem> = emptyList()
     var totalPrice: Double = 0.0
+
+    //Estado para controlar el muestreo del mapa
+    private  val _showMap = MutableStateFlow(false)
+    val showMap: StateFlow<Boolean> = _showMap.asStateFlow()
+
+    // Estado para la ubicación de retiro
+    private val _pickupLocation = mutableStateOf<LatLng?>(null)
+    val pickupLocation: LatLng? get() = _pickupLocation.value
 
     init {
         loadUserData()
@@ -41,8 +52,21 @@ class CheckoutViewModel: ViewModel() {
         }
     }
 
+
+    fun savePickupLocation(location: LatLng) {
+        _pickupLocation.value = location
+    }
+
+    fun clearPickupLocation() {
+        _pickupLocation.value = null
+    }
+
+
+
     private fun validateForm(): Boolean {
         val currentState = _state.value
+
+        // Si es retiro en tienda, no validamos dirección
         if (currentState.deliveryType == DeliveryType.HOME_DELIVERY &&
             currentState.deliveryAddress.isBlank()
         ) {
@@ -59,7 +83,6 @@ class CheckoutViewModel: ViewModel() {
         return true
     }
 
-
     fun setDeliveryType(type: DeliveryType){
         _state.update { it.copy(deliveryType = type) }
     }
@@ -72,8 +95,8 @@ class CheckoutViewModel: ViewModel() {
         _state.update { it.copy(deliveryAddress = address) }
     }
 
-    fun updateRecipientInfo(name: String, phones: String){
-        _state.update { it.copy(recipientName = name, recipientPhone = phones) }
+    fun updateRecipientInfo(name: String, phone: String){
+        _state.update { it.copy(recipientName = name, recipientPhone = phone) }
     }
 
     fun updateDeliveryInstruction(instructions: String){
