@@ -26,10 +26,10 @@ android {
             localProperties.load(it)
         }
 
-        val mapsApiKey = localProperties["MAPS_API_KEY"] ?: ""
+        val mapsApiKey = localProperties["AIzaSyBiNYHbbBaw2HQKdhQ_-quTeo_2MzT5xD4"] ?: ""
 
         //Agregamos al manifest
-        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+        manifestPlaceholders["AIzaSyBiNYHbbBaw2HQKdhQ_-quTeo_2MzT5xD4"] = mapsApiKey
 
         //Agregar al BuildConfig
         buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")

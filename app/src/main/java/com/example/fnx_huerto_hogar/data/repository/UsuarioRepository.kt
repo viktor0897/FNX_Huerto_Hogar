@@ -19,14 +19,23 @@ object UsuarioRepository {
         nombre: String,
         apellido: String,
         email: String,
-        contrasenna: String
+        contrasenna: String,
+        telefono: String,
+        direccion: String,
+        comuna: String,
+        region: String
     ): Boolean = withContext(Dispatchers.IO) {
         return@withContext try {
             val usuario = Usuario(
                 nombre = nombre,
                 apellido = apellido,
                 email = email,
-                contrasenna = contrasenna
+                contrasenna = contrasenna,
+                telefono = telefono,
+                direccion = direccion,
+                comuna = comuna,
+                region = region,
+                rol = "usuario"
             )
 
             val response = apiService.registrarUsuario(usuario)

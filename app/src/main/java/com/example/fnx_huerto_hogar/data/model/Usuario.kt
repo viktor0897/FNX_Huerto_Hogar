@@ -6,11 +6,11 @@ data class Usuario(
     val nombre: String = "",
     val apellido: String = "",
     val email: String = "",
-    val contrasenna: String? = null,
-    val telefono: String? = null,
-    val direccion: String? = null,
-    val comuna: String? = null,
-    val region: String? = null,
-    val rol: String? = null,
+    val contrasenna: String? = "",
+    val telefono: String? = "",
+    val direccion: String? = "",
+    val comuna: String? = "",
+    val region: String? = "",
+    val rol: String? = "Usuario",
     val profilePicture: String? = null
 )
