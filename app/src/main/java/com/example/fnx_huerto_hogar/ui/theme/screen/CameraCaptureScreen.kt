@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import androidx.core.content.FileProvider
 import androidx.navigation.NavController
-import com.example.fnx_huerto_hogar.data.repository.UserRepository
+import com.example.fnx_huerto_hogar.data.repository.UsuarioRepository
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -138,7 +138,7 @@ fun CameraCaptureScreen(
                         imageUri?.let { uri ->
                             // GUARDAR LA FOTO - ¡ESTO ES LO IMPORTANTE!
                             // Convertir URI a String y guardar en Repository
-                            UserRepository.updateProfilePicture(uri.toString())
+                            UsuarioRepository.updateProfilePicture(uri.toString())
 
                             // Regresar a la pantalla anterior
                             navController.popBackStack()

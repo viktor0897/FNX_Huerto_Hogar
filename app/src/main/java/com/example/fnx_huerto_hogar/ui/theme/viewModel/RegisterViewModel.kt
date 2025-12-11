@@ -2,9 +2,8 @@ package com.example.fnx_huerto_hogar.ui.theme.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.fnx_huerto_hogar.data.model.User
-import com.example.fnx_huerto_hogar.data.model.UserRole
-import com.example.fnx_huerto_hogar.data.repository.UserRepository
+import com.example.fnx_huerto_hogar.data.model.Usuario
+import com.example.fnx_huerto_hogar.data.repository.UsuarioRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -102,9 +101,9 @@ class RegisterViewModel : ViewModel() {
                 emailLowerCase.endsWith("@gmail.com")
     }
 
-    // Función de registro
+    // Función de registro MODIFICADA para usar el nuevo repositorio
     fun register() {
-        // Validaciones
+        // Validaciones (mantienes igual)
         if (_name.value.isBlank()) {
             _errorMessage.value = "El nombre es obligatorio"
             return
@@ -176,24 +175,19 @@ class RegisterViewModel : ViewModel() {
             _errorMessage.value = null
 
             try {
-                val user = User(
+                // Usamos el NUEVO repositorio que conecta con el backend
+                val success = UsuarioRepository.registrarUsuario(
+                    nombre = _name.value.trim(),
+                    apellido = _lastName.value.trim(),
                     email = _email.value.trim().lowercase(),
-                    name = _name.value.trim(),
-                    lastName = _lastName.value.trim(),
-                    password = _password.value,
-                    phone = _phone.value,
-                    address = _address.value.trim(),
-                    comuna = _comuna.value.trim(),
-                    region = _region.value.trim(),
-                    rol = UserRole.USER
+                    contrasenna = _password.value
                 )
 
-                val success = UserRepository.registerUser(user)
                 if (success) {
                     _isSuccess.value = true
                     clearForm()
                 } else {
-                    _errorMessage.value = "El correo ya está registrado"
+                    _errorMessage.value = "El correo ya está registrado o hubo un error"
                 }
             } catch (e: Exception) {
                 _errorMessage.value = "Error al registrar el usuario: ${e.message}"

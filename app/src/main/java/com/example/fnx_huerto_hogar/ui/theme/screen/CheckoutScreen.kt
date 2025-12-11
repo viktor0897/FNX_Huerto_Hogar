@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,12 +24,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.fnx_huerto_hogar.data.DeliveryType
 import com.example.fnx_huerto_hogar.data.PaymentMethod
 import com.example.fnx_huerto_hogar.data.model.CartItem
+import com.example.fnx_huerto_hogar.navigate.AppScreens
 import com.example.fnx_huerto_hogar.ui.theme.*
 import com.example.fnx_huerto_hogar.ui.theme.viewModel.CartViewModel
 import com.example.fnx_huerto_hogar.ui.theme.viewModel.CheckoutViewModel
@@ -46,12 +49,15 @@ fun CheckoutScreen(
     navController: NavController
 ) {
     //ViewModel del carrtio
-    val cartViewModel: CartViewModel= viewModel()
+    val cartViewModel: CartViewModel = viewModel()
     val cartItems by cartViewModel.cartItems.collectAsState()
     val totalPrice by cartViewModel.totalPrice.collectAsState()
 
     val viewModel: CheckoutViewModel = viewModel()
     val state by viewModel.state.collectAsState()
+
+    // Control para mostrar el diálogo del clima
+    var showWeatherDialog by remember { mutableStateOf(false) }
 
     // Inicializamos con los datos del carrito
     LaunchedEffect(Unit) {
@@ -102,7 +108,7 @@ fun CheckoutScreen(
             // Tipo de entrega
             DeliveryTypeSection(
                 deliveryType = state.deliveryType,
-                onDeliveryTypeSelected = viewModel::setDeliveryType // CORREGIDO
+                onDeliveryTypeSelected = viewModel::setDeliveryType
             )
 
             // Dirección de entrega (solo si es delivery)
@@ -130,7 +136,7 @@ fun CheckoutScreen(
                 }
             )
 
-            // Método de pago
+            // Metodo de pago
             PaymentMethodSection(
                 paymentMethod = state.paymentMethod,
                 onPaymentMethodSelected = viewModel::setPaymentMethod
@@ -144,14 +150,15 @@ fun CheckoutScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón Confirmar
+            // Botón Confirmar - MODIFICADO (SOLO un callback)
             ConfirmOrderButton(
                 isLoading = state.isLoading,
                 isConfirmed = state.isConfirmed,
                 onConfirm = {
-                    viewModel.confirmOrder {
-                        navController.navigate("order_confirmation")
-                    }
+                    // Solo mostramos el diálogo del clima
+                    viewModel.confirmOrder(
+                        onWeatherReady = { showWeatherDialog = true }
+                    )
                 }
             )
 
@@ -165,9 +172,20 @@ fun CheckoutScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
         }
+
+        // Diálogo del clima que se muestra después de confirmar
+        if (showWeatherDialog) {
+            WeatherAlertDialog(
+                weatherDescription = state.weatherDescription,
+                weatherTemperature = state.weatherTemperature,
+                onDismiss = {
+                    showWeatherDialog = false
+                    // SOLO se cierra el diálogo, no se navega a ninguna parte
+                }
+            )
+        }
     }
 }
-
 @Composable
 fun OrderSummarySection(
     cartItems: List<CartItem>,
@@ -830,6 +848,7 @@ fun ConfirmOrderButton(
                 fontWeight = FontWeight.Bold
             )
         } else {
+
             Button(
                 onClick = onConfirm,
                 modifier = Modifier
@@ -1045,12 +1064,12 @@ fun MapCard(
                     }
                 }
             } else {
-                // Placeholder mientras carga - CORREGIDO: usar 0.2f
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(250.dp)
-                        .background(Color.LightGray.copy(alpha = 0.2f)) // ¡Aquí está la corrección!
+                        .background(Color.LightGray.copy(alpha = 0.2f))
                         .clip(RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -1141,4 +1160,89 @@ fun MapCard(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WeatherAlertDialog(
+    weatherDescription: String,
+    weatherTemperature: Double,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "🌤️ Clima en tu ubicación",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = GreenPrimary
+            )
+        },
+        text = {
+            Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column {
+                        Text(
+                            text = "Condiciones:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                        Text(
+                            text = weatherDescription.replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = YellowAccent.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "${weatherTemperature.toInt()}°C",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Recomendación simple
+                val recommendation = when {
+                    weatherTemperature < 10 -> "❄️ Abrígate bien para el retiro"
+                    weatherTemperature < 20 -> "🧥 Lleva una chaqueta ligera"
+                    weatherTemperature < 30 -> "😎 Temperatura ideal para salir"
+                    else -> "🔥 Hidrátate bien, hace calor"
+                }
+
+                Text(
+                    text = recommendation,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = GreenPrimary,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GreenPrimary
+                )
+            ) {
+                Text("Continuar con el pedido")
+            }
+        }
+    )
 }

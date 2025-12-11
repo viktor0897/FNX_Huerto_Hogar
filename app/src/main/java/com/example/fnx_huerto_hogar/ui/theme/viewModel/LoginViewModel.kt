@@ -3,8 +3,8 @@ package com.example.fnx_huerto_hogar.ui.theme.viewModel
 import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.fnx_huerto_hogar.data.model.User
-import com.example.fnx_huerto_hogar.data.repository.UserRepository
+import com.example.fnx_huerto_hogar.data.model.Usuario
+import com.example.fnx_huerto_hogar.data.repository.UsuarioRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class LoginViewModel(
-    private val userRepository: UserRepository = UserRepository
+    private val userRepository: UsuarioRepository = UsuarioRepository
 ): ViewModel() {
 
     //Estados del viewmodel
@@ -27,8 +27,8 @@ class LoginViewModel(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    private val _currentUser = MutableStateFlow<User?>(null)
-    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
+    private val _currentUser = MutableStateFlow<Usuario?>(null)
+    val currentUser: StateFlow<Usuario?> = _currentUser.asStateFlow()
 
     private val _loginUserSuccessful = MutableStateFlow(false)
     val loginUserSuccessful: StateFlow<Boolean> = _loginUserSuccessful.asStateFlow()
@@ -63,7 +63,7 @@ class LoginViewModel(
 
             try {
                 delay(1500)
-                val user = UserRepository.login(_email.value, _password.value)
+                val user = UsuarioRepository.loginConUsuario(_email.value, _password.value)
                 if (user != null) {
                     //Login Exitoso
                     _currentUser.value = user
