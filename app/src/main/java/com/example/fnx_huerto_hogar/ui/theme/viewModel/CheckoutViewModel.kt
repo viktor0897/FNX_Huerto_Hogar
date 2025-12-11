@@ -116,7 +116,7 @@ class CheckoutViewModel : ViewModel() {
 
 
     fun confirmOrder(
-        onWeatherReady: () -> Unit,  // Nuevo callback cuando el clima está listo
+        onWeatherReady: () -> Unit,
     ) {
         if (!validateForm()) return
 

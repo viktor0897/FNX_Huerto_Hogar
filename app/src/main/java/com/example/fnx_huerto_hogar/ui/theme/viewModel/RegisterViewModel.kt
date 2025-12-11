@@ -180,7 +180,11 @@ class RegisterViewModel : ViewModel() {
                     nombre = _name.value.trim(),
                     apellido = _lastName.value.trim(),
                     email = _email.value.trim().lowercase(),
-                    contrasenna = _password.value
+                    contrasenna = _password.value,
+                    telefono = _phone.value.trim(),
+                    direccion = _address.value.trim(),
+                    comuna = _comuna.value.trim(),
+                    region = _region.value.trim()
                 )
 
                 if (success) {
