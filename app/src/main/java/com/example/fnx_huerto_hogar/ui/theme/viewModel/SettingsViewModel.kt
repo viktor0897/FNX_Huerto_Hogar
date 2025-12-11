@@ -2,7 +2,8 @@ package com.example.fnx_huerto_hogar.ui.theme.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.fnx_huerto_hogar.data.repository.UserRepository
+
+import com.example.fnx_huerto_hogar.data.repository.UsuarioRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -10,7 +11,7 @@ import kotlinx.coroutines.launch
 
 class SettingsViewModel: ViewModel() {
 
-    private val userRepository = UserRepository
+    private val userRepository = UsuarioRepository
 
     //Estados de operación del viewModel
     private val _newEmail = MutableStateFlow("")

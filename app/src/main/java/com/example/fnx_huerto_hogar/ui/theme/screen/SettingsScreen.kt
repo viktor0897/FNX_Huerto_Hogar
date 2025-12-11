@@ -119,7 +119,7 @@ fun SettingsScreen (
                     )
 
                     Text(
-                        text = "Nombre: ${currentUser?.name?: ""} ${currentUser?.lastName?: ""}",
+                        text = "Nombre: ${currentUser?.nombre?: ""} ${currentUser?.apellido?: ""}",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }

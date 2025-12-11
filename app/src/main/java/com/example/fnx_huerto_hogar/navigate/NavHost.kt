@@ -10,6 +10,7 @@ import com.example.fnx_huerto_hogar.ui.theme.screen.CartScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.CatalogScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.CheckoutScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.FavoriteScreen
+import com.example.fnx_huerto_hogar.ui.theme.screen.GeolocalizationScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.HomeScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.LoginScreen
 import com.example.fnx_huerto_hogar.ui.theme.screen.RegisterScreen
@@ -56,5 +57,14 @@ fun AppNavHost(
         composable(route = AppScreens.CameraCaptureScreen.route){
             CameraCaptureScreen(navController = navController)
         }
+
+        composable (route = AppScreens.GeolocalizationScreen.route){
+            GeolocalizationScreen(navController = navController)
+        }
+
+        composable (route = AppScreens.CheckoutScreen.route){
+            CheckoutScreen(navController = navController)
+        }
+
     }
 }

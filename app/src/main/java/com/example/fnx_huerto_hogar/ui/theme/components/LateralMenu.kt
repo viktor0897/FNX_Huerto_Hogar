@@ -14,7 +14,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.example.fnx_huerto_hogar.data.repository.UserRepository
+import com.example.fnx_huerto_hogar.data.repository.UsuarioRepository
 import com.example.fnx_huerto_hogar.navigate.AppScreens
 import com.example.fnx_huerto_hogar.navigate.AppNavHost
 import kotlinx.coroutines.launch
@@ -25,14 +25,14 @@ fun LateralMenu() {
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
 
-    var currentUser by remember { mutableStateOf(UserRepository.getCurrentUser()) }
+    var currentUser by remember { mutableStateOf(UsuarioRepository.getCurrentUser()) }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             LaunchedEffect(drawerState.currentValue) {
                 if (drawerState.isOpen){
-                    currentUser = UserRepository.getCurrentUser()
+                    currentUser = UsuarioRepository.getCurrentUser()
                 }
             }
             if (currentUser != null) {
@@ -41,7 +41,7 @@ fun LateralMenu() {
                     onLogoutClick = {
                         scope.launch {
                             drawerState.close()
-                            UserRepository.logout()
+                            UsuarioRepository.logout()
                             currentUser = null
                             navController.navigate(AppScreens.HomeScreen.route) {
                                 popUpTo(0)
@@ -94,7 +94,7 @@ fun LateralMenu() {
                     navController = navController,
                     onMenuClick = {
                         scope.launch {
-                            currentUser = UserRepository.getCurrentUser()
+                            currentUser = UsuarioRepository.getCurrentUser()
                             drawerState.open()
                         }
                     }

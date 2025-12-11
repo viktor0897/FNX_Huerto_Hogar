@@ -25,7 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.fnx_huerto_hogar.R
-import com.example.fnx_huerto_hogar.data.model.User
+import com.example.fnx_huerto_hogar.data.model.Usuario
 import com.example.fnx_huerto_hogar.ui.theme.BrownSecondary
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
@@ -33,11 +33,11 @@ import com.example.fnx_huerto_hogar.ui.theme.GreenSecondary
 import com.example.fnx_huerto_hogar.ui.theme.screen.*
 import com.example.fnx_huerto_hogar.ui.theme.screen.CameraCaptureScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.fnx_huerto_hogar.data.repository.UserRepository
+import com.example.fnx_huerto_hogar.data.repository.UsuarioRepository
 
 @Composable
 fun UserLateralMenu(
-    currentUser: User,
+    currentUser: Usuario,
     onLogoutClick: () -> Unit,
     onSettingsClick: () -> Unit,
     navController: NavController,
@@ -46,7 +46,7 @@ fun UserLateralMenu(
     // 1. Obtener la foto ACTUAL del Repository
     val currentPhotoUri = remember {
         // Leer la foto directamente del Repository
-        UserRepository.getCurrentUser()?.profilePicture?.let { Uri.parse(it) }
+        UsuarioRepository.getCurrentUser()?.profilePicture?.let { Uri.parse(it) }
     }
 
     ModalDrawerSheet(
@@ -134,7 +134,7 @@ fun UserLateralMenu(
 
             // Información del usuario
             Text(
-                text = "${currentUser.name} ${currentUser.lastName}",
+                text = "${currentUser.nombre} ${currentUser.apellido}",
                 style = MaterialTheme.typography.titleLarge,
                 color = GreenPrimary,
                 textAlign = TextAlign.Center,
@@ -150,7 +150,7 @@ fun UserLateralMenu(
             )
 
             Text(
-                text = "${currentUser.address}, ${currentUser.comuna}",
+                text = "${currentUser.direccion}, ${currentUser.comuna}",
                 style = MaterialTheme.typography.bodySmall,
                 color = BrownSecondary,
                 textAlign = TextAlign.Center

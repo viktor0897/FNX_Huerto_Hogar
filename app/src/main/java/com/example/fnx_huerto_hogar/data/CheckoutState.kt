@@ -12,8 +12,12 @@ data class CheckoutState(
     val deliveryInstruction: String = "",
     val isLoading: Boolean = false,
     val isConfirmed: Boolean = false,
-    val errorMessage: String = ""
-)
+    val errorMessage: String = "",
+
+    val weatherDescription: String = "",
+    val weatherTemperature: Double = 0.0
+
+    )
 
 enum class DeliveryType {
     HOME_DELIVERY,
@@ -25,4 +29,5 @@ enum class PaymentMethod{
     DEBIT_CARD,
     PAYPAL
 }
+
 

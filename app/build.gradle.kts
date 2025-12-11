@@ -59,15 +59,6 @@ android {
     }
 }
 
-android {
-    defaultConfig {
-        val localProperties = Properties()
-        rootProject.file("local.properties").inputStream().use { localProperties.load(it) }
-
-        manifestPlaceholders.put("MAPS_API_KEY", localProperties["MAPS_API_KEY"] ?: "")
-    }
-}
-
 dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.foundation)
@@ -90,14 +81,13 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
 
     //Maps
-    val mapsComposeVersion = "6.8.0"
+    val mapsComposeVersion = "4.3.0"
     implementation("com.google.maps.android:maps-compose:$mapsComposeVersion")
     implementation("com.google.maps.android:maps-compose-utils:$mapsComposeVersion")
     implementation("com.google.maps.android:maps-compose-widgets:$mapsComposeVersion")
 
     // ... otras dependencias ...
-    implementation("com.google.android.gms:play-services-location:21.0.1") // Usa la última versión
-    // Para usar .await() con tasks de Google Play Services en coroutines
+    implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0")
 
     implementation("androidx.activity:activity-compose:1.9.3")
@@ -108,9 +98,23 @@ dependencies {
     implementation("androidx.core:core-ktx:1.12.0") // Usa la última versión
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0") // Usa la última versión
 
-    // Opcional: Para obtener la ubicación del usuario (FusedLocationProviderClient)
+    //Para obtener la ubicación del usuario (FusedLocationProviderClient)
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0")
+
+    //Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    //Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // ViewModel utilities for Compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.3")
+
+    // Activity Compose
+    implementation("androidx.activity:activity-compose:1.9.0")
 
 
     implementation(libs.androidx.core.ktx)

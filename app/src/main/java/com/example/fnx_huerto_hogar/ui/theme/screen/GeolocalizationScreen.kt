@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.CameraPosition
@@ -41,7 +42,9 @@ import kotlinx.coroutines.tasks.await
 
 @SuppressLint("MissingPermission", "CoroutineCreationDuringComposition")
 @Composable
-fun GeolocalizationScreen() {
+fun GeolocalizationScreen(
+    navController: NavController
+) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -136,16 +139,6 @@ fun GeolocalizationScreen() {
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Verificar API Key
-        LaunchedEffect(Unit) {
-            try {
-                val apiKey = BuildConfig.MAPS_API_KEY
-                println("API Key cargada: ${if (apiKey.isNotEmpty()) "SÍ" else "NO"}")
-                println("Longitud API Key: ${apiKey.length}")
-            } catch (e: Exception) {
-                println("Error al leer API Key: ${e.message}")
-            }
-        }
 
         // Mapa o placeholder
         if (userLocation != null && hasLocationPermission) {
