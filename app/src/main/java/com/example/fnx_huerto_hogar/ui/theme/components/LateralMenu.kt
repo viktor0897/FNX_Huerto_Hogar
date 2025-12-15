@@ -5,13 +5,8 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.example.fnx_huerto_hogar.data.repository.UsuarioRepository
@@ -25,23 +20,27 @@ fun LateralMenu() {
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
 
-    var currentUser by remember { mutableStateOf(UsuarioRepository.getCurrentUser()) }
+
+    var currentUser by remember { mutableStateOf(UsuarioRepository.CurrentUser.get()) }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
+            // Actualizar cuando se abre el drawer
             LaunchedEffect(drawerState.currentValue) {
-                if (drawerState.isOpen){
-                    currentUser = UsuarioRepository.getCurrentUser()
+                if (drawerState.isOpen) {
+                    currentUser = UsuarioRepository.CurrentUser.get()
                 }
             }
+
             if (currentUser != null) {
                 UserLateralMenu(
                     currentUser = currentUser!!,
                     onLogoutClick = {
                         scope.launch {
                             drawerState.close()
-                            UsuarioRepository.logout()
+                            // SIMPLE: Usar CurrentUser.clear()
+                            UsuarioRepository.CurrentUser.clear()
                             currentUser = null
                             navController.navigate(AppScreens.HomeScreen.route) {
                                 popUpTo(0)
@@ -54,14 +53,7 @@ fun LateralMenu() {
                             navController.navigate(AppScreens.SettingsScreen.route)
                         }
                     },
-                    navController = navController,
-
-                    onCameraClick = {
-                        scope.launch {
-                            drawerState.close()
-                            navController.navigate(AppScreens.CameraCaptureScreen.route)
-                        }
-                    }
+                    navController = navController
                 )
             } else {
                 GuestLateralMenu(
@@ -94,7 +86,7 @@ fun LateralMenu() {
                     navController = navController,
                     onMenuClick = {
                         scope.launch {
-                            currentUser = UsuarioRepository.getCurrentUser()
+                            currentUser = UsuarioRepository.CurrentUser.get()
                             drawerState.open()
                         }
                     }
@@ -103,8 +95,7 @@ fun LateralMenu() {
         ) { contentPadding ->
             AppNavHost(
                 navController = navController,
-                modifier = Modifier
-                    .padding(contentPadding)
+                modifier = Modifier.padding(contentPadding)
             )
         }
     }

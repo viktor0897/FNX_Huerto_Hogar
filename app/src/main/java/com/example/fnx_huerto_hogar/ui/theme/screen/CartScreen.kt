@@ -1,6 +1,5 @@
 package com.example.fnx_huerto_hogar.ui.theme.screen
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,7 +33,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -44,43 +45,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.fnx_huerto_hogar.data.repository.CartRepository
+import coil.compose.AsyncImage
+import com.example.fnx_huerto_hogar.data.model.CartItem
+import com.example.fnx_huerto_hogar.navigate.AppScreens
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
 import com.example.fnx_huerto_hogar.ui.theme.GreenSecondary
 import com.example.fnx_huerto_hogar.ui.theme.YellowAccent
 import com.example.fnx_huerto_hogar.ui.theme.viewModel.CartViewModel
-import com.example.fnx_huerto_hogar.data.model.CartItem
-import androidx.compose.material3.Snackbar
-import com.example.fnx_huerto_hogar.navigate.AppScreens
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(
-    navController: NavController
+    navController: NavController,
+    usuarioId: Long = 1L
 ) {
-    // Crea el ViewModel directamente sin factory
     val viewModel: CartViewModel = viewModel()
 
     // Estados del ViewModel
-    val cartItems by viewModel.cartItems.collectAsState()
-    val totalItems by viewModel.totalItems.collectAsState()
-    val totalPrice by viewModel.totalPrice.collectAsState()
+    val cart by viewModel.cart.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val message by viewModel.message.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val showSuccessMessage by viewModel.showSuccessMessage.collectAsState()
 
-    // Snackbar de mensajes
-    LaunchedEffect(message) {
-        if (message.isNotEmpty()) {
-            // El mensaje se muestra automáticamente
-        }
+    // Cargar el carrito cuando se monta la pantalla
+    LaunchedEffect(usuarioId) {
+        viewModel.loadCart(usuarioId)
     }
 
     Scaffold(
@@ -105,67 +100,114 @@ fun CartScreen(
                         )
                     }
                 },
-                colors = androidx.compose.material3.TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = GrayBackground
                 )
             )
         },
         containerColor = GrayBackground
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(GrayBackground)
                 .padding(paddingValues)
         ) {
-            if (isLoading) {
-                LoadingCartIndicator()
-            } else if (cartItems.isEmpty()) {
-                EmptyCartState()
-            } else {
-                // Lista de productos en el carrito
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(cartItems) { item ->
-                        CartItemCard(
-                            item = item,
-                            onIncrement = { viewModel.incrementQuantity(item.productId) },
-                            onDecrement = { viewModel.decrementQuantity(item.productId) },
-                            onRemove = { viewModel.removeFromCart(item.productId) }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(GrayBackground)
+            ) {
+                when {
+                    isLoading -> {
+                        LoadingCartIndicator()
+                    }
+                    cart == null || cart?.items.isNullOrEmpty() -> {
+                        EmptyCartState()
+                    }
+                    else -> {
+                        val cartItems = cart?.items ?: emptyList()
+
+                        // Lista de productos en el carrito
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(cartItems) { item ->
+                                CartItemCard(
+                                    item = item,
+                                    onIncrement = {
+                                        viewModel.updateQuantity(
+                                            usuarioId,
+                                            item.productId,
+                                            item.quantity + 1
+                                        )
+                                    },
+                                    onDecrement = {
+                                        if (item.quantity > 1) {
+                                            viewModel.updateQuantity(
+                                                usuarioId,
+                                                item.productId,
+                                                item.quantity - 1
+                                            )
+                                        }
+                                    },
+                                    onRemove = {
+                                        viewModel.removeItem(usuarioId, item.productId)
+                                    }
+                                )
+                            }
+                        }
+
+                        // Resumen y botón de compra
+                        CartSummary(
+                            totalItems = cartItems.sumOf { it.quantity },
+                            totalPrice = cart?.total ?: 0.0,
+                            onClearCart = { viewModel.clearCart(usuarioId) },
+                            navController = navController
                         )
                     }
                 }
-
-                // Resumen y botón de compra
-                CartSummary(
-                    totalItems = totalItems,
-                    totalPrice = totalPrice,
-                    onClearCart = viewModel::clearCart,
-                    navController = navController
-                )
             }
-        }
 
-        // Snackbar para mensajes
-        if (message.isNotEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                Snackbar(
-                    action = {
-                        IconButton(onClick = { viewModel.clearMessage() }) {
-                            Icon(Icons.Outlined.Close, "Cerrar")
-                        }
-                    }
+            // Snackbar para mensajes de error
+            if (!errorMessage.isNullOrEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.BottomCenter
                 ) {
-                    Text(message)
+                    Snackbar(
+                        action = {
+                            IconButton(onClick = { /* Clear error */ }) {
+                                Icon(Icons.Outlined.Close, "Cerrar")
+                            }
+                        },
+                        containerColor = Color.Red.copy(alpha = 0.9f),
+                        contentColor = Color.White
+                    ) {
+                        Text(errorMessage ?: "")
+                    }
+                }
+            }
+
+            // Snackbar para mensaje de éxito
+            if (showSuccessMessage) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    Snackbar(
+                        containerColor = GreenPrimary,
+                        contentColor = Color.White
+                    ) {
+                        Text("Producto agregado al carrito")
+                    }
                 }
             }
         }
@@ -174,7 +216,7 @@ fun CartScreen(
 
 @Composable
 fun CartItemCard(
-    item: com.example.fnx_huerto_hogar.data.model.CartItem,
+    item: CartItem,
     onIncrement: () -> Unit,
     onDecrement: () -> Unit,
     onRemove: () -> Unit
@@ -192,14 +234,31 @@ fun CartItemCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Imagen del producto
-            Image(
-                painter = painterResource(id = item.image),
-                contentDescription = "Imagen de ${item.name}",
+            Box(
                 modifier = Modifier
                     .size(80.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
-            )
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(GrayBackground),
+                contentAlignment = Alignment.Center
+            ) {
+                if (item.image.isNotEmpty() && item.image.startsWith("http")) {
+                    // Si la imagen es una URL, cargarla con Coil
+                    AsyncImage(
+                        model = item.image,
+                        contentDescription = "Imagen de ${item.name}",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    // Icono placeholder si no hay imagen
+                    Icon(
+                        imageVector = Icons.Outlined.ShoppingCart,
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp),
+                        tint = GreenSecondary
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.width(16.dp))
 
@@ -218,7 +277,7 @@ fun CartItemCard(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "$${item.price}",
+                    text = "$${String.format("%.2f", item.price)}",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface
@@ -242,7 +301,7 @@ fun CartItemCard(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "$${item.subtotal}",
+                    text = "$${String.format("%.2f", item.subtotal)}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = GreenPrimary
@@ -276,7 +335,8 @@ fun QuantitySelectorSmall(
         // Botón Disminuir
         IconButton(
             onClick = onDecrease,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(24.dp),
+            enabled = quantity > 1
         ) {
             Icon(
                 Icons.Outlined.Remove,
@@ -374,7 +434,7 @@ fun CartSummary(
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = "$${totalPrice.toInt()}",
+                        text = "$${String.format("%.2f", totalPrice)}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
@@ -392,11 +452,11 @@ fun CartSummary(
                 Button(
                     onClick = onClearCart,
                     modifier = Modifier.weight(1f),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                    colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Transparent
                     ),
                     shape = RoundedCornerShape(8.dp),
-                    border = androidx.compose.material3.ButtonDefaults.outlinedButtonBorder()
+                    border = ButtonDefaults.outlinedButtonBorder()
                 ) {
                     Text(
                         text = "Vaciar",

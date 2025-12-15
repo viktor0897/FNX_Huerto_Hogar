@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.fnx_huerto_hogar.data.repository.CartRepository
 import com.example.fnx_huerto_hogar.data.repository.ProductRepository
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
@@ -62,7 +63,7 @@ import kotlinx.coroutines.launch
 fun DetalleProductoScreen(
     productId: String,
     repository: ProductRepository = remember { ProductRepository() },
-    cartRepository: CartRepository = CartRepository,
+    cartRepository: CartRepository = CartRepository(),
     onDismiss: () -> Unit
 ) {
     // Factory
@@ -81,7 +82,7 @@ fun DetalleProductoScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val message by viewModel.message.collectAsState()
     val quantity by viewModel.quantity.collectAsState()
-    val addToCart by viewModel.addToCart.collectAsState()
+    val addToCart by viewModel.addingToCart.collectAsState()
 
     // Estado del modal
     val sheetState = rememberModalBottomSheetState()
@@ -184,9 +185,9 @@ fun DetalleProductoScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Imagen del producto
-                Image(
-                    painter = painterResource(id = product!!.image),
+                //Imagen
+                AsyncImage(
+                    model = product!!.image,
                     contentDescription = product!!.name,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -259,7 +260,7 @@ fun DetalleProductoScreen(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
-                    DetailRow("Categoría", product!!.category.name)
+                    DetailRow("Categoría", product!!.category)
                     DetailRow("Origen", product!!.origin)
                     DetailRow("Medida", product!!.measure)
                     DetailRow(
@@ -299,11 +300,11 @@ fun DetalleProductoScreen(
 
                 // Botón agregar al carrito
                 Button(
-                    onClick = viewModel::addToCart,
+                    onClick = { viewModel.addToCart(1L) },  // Cambia 1L por tu usuarioId real
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
-                    enabled = product!!.stockAvailable() && !addToCart,
+                    enabled = product!!.stock > 0 && !addToCart,
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                         containerColor = GreenPrimary
                     ),
@@ -317,7 +318,7 @@ fun DetalleProductoScreen(
                         )
                     } else {
                         Text(
-                            text = if (product!!.stockAvailable()) "Agregar $quantity al carrito - $${(product!!.price * quantity).toInt()}"
+                            text = if (product!!.stock > 0) "Agregar $quantity al carrito - $${(product!!.price * quantity).toInt()}"
                             else "Sin Stock",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold

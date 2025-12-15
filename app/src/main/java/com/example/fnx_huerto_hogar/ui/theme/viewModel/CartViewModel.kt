@@ -2,6 +2,7 @@ package com.example.fnx_huerto_hogar.ui.theme.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.fnx_huerto_hogar.data.model.Cart
 import com.example.fnx_huerto_hogar.data.model.CartItem
 import com.example.fnx_huerto_hogar.data.model.Product
 import com.example.fnx_huerto_hogar.data.repository.CartRepository
@@ -11,137 +12,93 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class CartViewModel: ViewModel(){
+class CartViewModel : ViewModel() {
+    private val cartRepository = CartRepository()
 
-    private val repository = CartRepository
-
-    //Estados
-    private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
-    val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()
-
-    private val _totalItems = MutableStateFlow(0)
-    val totalItems: StateFlow<Int> = _totalItems.asStateFlow()
-
-    private val _totalPrice = MutableStateFlow(0.0)
-    val totalPrice: StateFlow<Double> = _totalPrice.asStateFlow()
-
-    private val _message = MutableStateFlow("")
-    val message: StateFlow<String> = _message.asStateFlow()
+    private val _cart = MutableStateFlow<Cart?>(null)
+    val cart: StateFlow<Cart?> = _cart.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    //Init
-    init {
-        observeCart()
-        observeTotals()
-    }
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    private fun observeCart() {
+    private val _showSuccessMessage = MutableStateFlow(false)
+    val showSuccessMessage: StateFlow<Boolean> = _showSuccessMessage.asStateFlow()
+
+    fun loadCart(usuarioId: Long) {
         viewModelScope.launch {
-            repository.getCart().collect { items ->
-                _cartItems.value = items
-            }
+            _isLoading.value = true
+            _errorMessage.value = null
+
+            cartRepository.getCart(usuarioId)
+                .onSuccess { _cart.value = it }
+                .onFailure { _errorMessage.value = it.message }
+
+            _isLoading.value = false
         }
     }
 
-
-    private fun observeTotals() {
+    fun addToCart(usuarioId: Long, productoId: String, cantidad: Int = 1) {
         viewModelScope.launch {
-            repository.getTotalItems().collect { total ->
-                _totalItems.value = total
-            }
-        }
+            _isLoading.value = true
+            _errorMessage.value = null
 
-        viewModelScope.launch {
-            repository.calculateCartTotal().collect { total ->
-                _totalPrice.value = total
-            }
-        }
-    }
-
-//    //Agregar al carrito
-//    fun addToCart(productId: String, name: String, price: Double, image: Int, quantity: Int){
-//        viewModelScope.launch {
-//            _isLoading.value = true
-//            try {
-//                val success = repository.addToCart(productId, name, price, image, quantity)
-//                if (success){
-//                    _message.value = "Producto Agregado"
-//                } else {
-//                    _message.value = "Error al agregar producto"
-//                }
-//            }finally{
-//                _isLoading.value = false
-//            }
-//
-//            //Limpiar mensaje después de x tiempo
-//            launch {
-//                delay(2000)
-//                _message.value = ""
-//            }
-//        }
-//    }
-
-    //Actualizar cantidad
-    fun updateQuantity(productId: String, newQuantity: Int){
-        viewModelScope.launch {
-            repository.updateQuantity(productId, newQuantity)
-        }
-    }
-
-    //deletear
-    fun removeFromCart(productId: String){
-        viewModelScope.launch {
-            repository.deleteFromCart(productId)
-            _message.value = "Producto eliminado"
-
-            launch {
-                delay(2000)
-                _message.value = ""
-            }
-        }
-    }
-
-    //Vaciar Carrito
-    fun clearCart(){
-        viewModelScope.launch {
-            repository.emptyCart()
-            _message.value = "Carrito vaciado"
-
-            launch {
-                delay(2000)
-                _message.value = ""
-            }
-        }
-    }
-
-    //Incrementar cantidad en el carro
-    fun incrementQuantity(productId: String){
-        viewModelScope.launch {
-            val currentItem = _cartItems.value.find { it.productId == productId }
-            currentItem?.let {item ->
-                updateQuantity(productId, item.quantity +1)
-            }
-        }
-    }
-
-    //Decrementar cantidad en el carro
-    fun decrementQuantity(productId: String) {
-        viewModelScope.launch {
-            val currentItem = _cartItems.value.find { it.productId == productId }
-            currentItem?.let { item ->
-                if (item.quantity > 1) {
-                    updateQuantity(productId, item.quantity - 1)
-                } else {
-                    removeFromCart(productId)
+            cartRepository.addToCart(usuarioId, productoId, cantidad)
+                .onSuccess {
+                    _cart.value = it
+                    _showSuccessMessage.value = true
+                    delay(2000)
+                    _showSuccessMessage.value = false
                 }
-            }
+                .onFailure { _errorMessage.value = it.message }
+
+            _isLoading.value = false
         }
     }
 
-    //limpiar mensaje
-    fun clearMessage(){
-        _message.value = ""
+    // CORREGIDO: itemId: Long → productoId: String
+    fun updateQuantity(usuarioId: Long, productoId: String, cantidad: Int) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+
+            cartRepository.updateCartItem(usuarioId, productoId, cantidad)
+                .onSuccess { _cart.value = it }
+                .onFailure { _errorMessage.value = it.message }
+
+            _isLoading.value = false
+        }
+    }
+
+    // CORREGIDO: itemId: Long → productoId: String
+    fun removeItem(usuarioId: Long, productoId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+
+            cartRepository.removeFromCart(usuarioId, productoId)
+                .onSuccess { _cart.value = it }
+                .onFailure { _errorMessage.value = it.message }
+
+            _isLoading.value = false
+        }
+    }
+
+    fun clearCart(usuarioId: Long) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+
+            cartRepository.clearCart(usuarioId)
+                .onSuccess {
+                    _cart.value = null
+                    loadCart(usuarioId)
+                }
+                .onFailure { _errorMessage.value = it.message }
+
+            _isLoading.value = false
+        }
     }
 }

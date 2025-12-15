@@ -3,6 +3,8 @@ package com.example.fnx_huerto_hogar.ui.theme.viewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fnx_huerto_hogar.data.model.Usuario
+import com.example.fnx_huerto_hogar.data.repository.UsuarioRepository.CurrentUser
+import com.example.fnx_huerto_hogar.data.repository.Resultado
 import com.example.fnx_huerto_hogar.data.repository.UsuarioRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +21,7 @@ class RegisterViewModel : ViewModel() {
     val lastName: StateFlow<String> = _lastName.asStateFlow()
 
     private val _email = MutableStateFlow("")
-    val email: StateFlow<String> =_email.asStateFlow()
+    val email: StateFlow<String> = _email.asStateFlow()
 
     private val _password = MutableStateFlow("")
     val password: StateFlow<String> = _password.asStateFlow()
@@ -49,22 +51,22 @@ class RegisterViewModel : ViewModel() {
     val isSuccess: StateFlow<Boolean> = _isSuccess.asStateFlow()
 
     // Funciones para actualizar campos
-    fun onNameChange(newName: String){
+    fun onNameChange(newName: String) {
         _name.value = newName
         _errorMessage.value = null
     }
 
-    fun onLastNameChange(newLastName: String){
+    fun onLastNameChange(newLastName: String) {
         _lastName.value = newLastName
         _errorMessage.value = null
     }
 
-    fun onEmailChange(newEmail: String){
+    fun onEmailChange(newEmail: String) {
         _email.value = newEmail
         _errorMessage.value = null
     }
 
-    fun onPasswordChange(newPassword: String){
+    fun onPasswordChange(newPassword: String) {
         _password.value = newPassword
         _errorMessage.value = null
     }
@@ -74,12 +76,12 @@ class RegisterViewModel : ViewModel() {
         _errorMessage.value = null
     }
 
-    fun onPhoneChange(newPhone: String){
+    fun onPhoneChange(newPhone: String) {
         _phone.value = newPhone
         _errorMessage.value = null
     }
 
-    fun onAdressChange(newAdress: String){
+    fun onAdressChange(newAdress: String) {
         _address.value = newAdress
         _errorMessage.value = null
     }
@@ -101,9 +103,9 @@ class RegisterViewModel : ViewModel() {
                 emailLowerCase.endsWith("@gmail.com")
     }
 
-    // Función de registro MODIFICADA para usar el nuevo repositorio
+    // Función de registro
     fun register() {
-        // Validaciones (mantienes igual)
+        // Validaciones
         if (_name.value.isBlank()) {
             _errorMessage.value = "El nombre es obligatorio"
             return
@@ -175,8 +177,9 @@ class RegisterViewModel : ViewModel() {
             _errorMessage.value = null
 
             try {
-                // Usamos el NUEVO repositorio que conecta con el backend
-                val success = UsuarioRepository.registrarUsuario(
+                // Crear objeto Usuario
+                val usuario = Usuario(
+                    id = null,
                     nombre = _name.value.trim(),
                     apellido = _lastName.value.trim(),
                     email = _email.value.trim().lowercase(),
@@ -184,24 +187,39 @@ class RegisterViewModel : ViewModel() {
                     telefono = _phone.value.trim(),
                     direccion = _address.value.trim(),
                     comuna = _comuna.value.trim(),
-                    region = _region.value.trim()
+                    region = _region.value.trim(),
+                    rol = "Usuario"
                 )
 
-                if (success) {
-                    _isSuccess.value = true
-                    clearForm()
-                } else {
-                    _errorMessage.value = "El correo ya está registrado o hubo un error"
+                // Crear instancia del Repository
+                val userRepository = UsuarioRepository()
+
+                // Llamar al repository
+                val result = userRepository.registrarUsuario(usuario)
+
+                when (result) {
+                    is Resultado.Exito -> {
+                        val usuarioRegistrado = result.datos
+
+                        // Guardar usuario en CurrentUser
+                        CurrentUser.save(usuarioRegistrado)
+
+                        _isSuccess.value = true
+                        clearForm()
+                    }
+                    is Resultado.Error -> {
+                        _errorMessage.value = result.excepcion.message ?: "Error al registrar"
+                    }
                 }
             } catch (e: Exception) {
-                _errorMessage.value = "Error al registrar el usuario: ${e.message}"
+                _errorMessage.value = "Error de conexión: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    fun clearForm(){
+    fun clearForm() {
         _name.value = ""
         _lastName.value = ""
         _email.value = ""

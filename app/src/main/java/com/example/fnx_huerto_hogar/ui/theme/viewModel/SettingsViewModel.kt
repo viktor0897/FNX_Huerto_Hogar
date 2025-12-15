@@ -2,7 +2,7 @@ package com.example.fnx_huerto_hogar.ui.theme.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-
+import com.example.fnx_huerto_hogar.data.repository.Resultado
 import com.example.fnx_huerto_hogar.data.repository.UsuarioRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 
 class SettingsViewModel: ViewModel() {
 
-    private val userRepository = UsuarioRepository
+    private val userRepository = UsuarioRepository()
 
     //Estados de operación del viewModel
     private val _newEmail = MutableStateFlow("")
@@ -29,7 +29,6 @@ class SettingsViewModel: ViewModel() {
     private val _confirmNewPassword = MutableStateFlow("")
     val confirmNewPassword: StateFlow<String> = _confirmNewPassword.asStateFlow()
 
-
     //Estados generales
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -39,7 +38,6 @@ class SettingsViewModel: ViewModel() {
 
     private val _successMessage = MutableStateFlow<String?>(null)
     val successMessage: StateFlow<String?> = _successMessage.asStateFlow()
-
 
     //Funciones de actualización de estados
     fun onNewEmailChange(email: String){
@@ -67,12 +65,14 @@ class SettingsViewModel: ViewModel() {
         clearMessages()
     }
 
-
-    //Funciones
+    //Función para cambiar email
     fun changeEmail(){
-        val currentUser = userRepository.getCurrentUser()
-        if (currentUser == null){
-            _errorMessage.value = "No hay usuario loggeado"
+        // ✅ Usar CurrentUser.get() en lugar de getCurrentUser()
+        val currentUser = UsuarioRepository.CurrentUser.get()
+        val userId = currentUser?.id
+
+        if (userId == null){
+            _errorMessage.value = "No hay usuario logueado"
             return
         }
 
@@ -97,21 +97,41 @@ class SettingsViewModel: ViewModel() {
             _successMessage.value = null
 
             try {
-                val success = userRepository.updateUserEmail(
-                    oldEmail = currentUser.email,
-                    newEmail = _newEmail.value.trim().lowercase(),
-                    password = _emailPassword.value
+                // ✅ Primero verificar credenciales con login
+                val loginResult = userRepository.iniciarSesion(
+                    email = currentUser.email,
+                    contrasenna = _emailPassword.value
                 )
 
-                if (success){
-                    _successMessage.value = "Email actualizado correctamente"
-                    clearEmailForm()
-                }else {
-                    _errorMessage.value = "Error al actualizar email"
+                when (loginResult) {
+                    is Resultado.Error -> {
+                        _errorMessage.value = "Contraseña incorrecta"
+                        _isLoading.value = false
+                        return@launch
+                    }
+                    is Resultado.Exito -> {
+                        // Contraseña correcta, proceder a actualizar email
+                        val updateResult = userRepository.actualizarCorreo(
+                            id = userId,
+                            nuevoCorreo = _newEmail.value.trim().lowercase()
+                        )
+
+                        when (updateResult) {
+                            is Resultado.Exito -> {
+                                // Actualizar el usuario en CurrentUser
+                                UsuarioRepository.CurrentUser.save(updateResult.datos)
+                                _successMessage.value = "Email actualizado correctamente"
+                                clearEmailForm()
+                            }
+                            is Resultado.Error -> {
+                                _errorMessage.value = updateResult.excepcion.message ?: "Error al actualizar email"
+                            }
+                        }
+                    }
                 }
-            }catch (e: Exception){
+            } catch (e: Exception) {
                 _errorMessage.value = "Error: ${e.message}"
-            }finally {
+            } finally {
                 _isLoading.value = false
             }
         }
@@ -119,14 +139,17 @@ class SettingsViewModel: ViewModel() {
 
     //Función para cambiar contraseña
     fun changePassword(){
-        val currentUser = userRepository.getCurrentUser()
-        if (currentUser == null){
-            _errorMessage.value = "No hay usuario loggeado"
+        // ✅ Usar CurrentUser.get() en lugar de getCurrentUser()
+        val currentUser = UsuarioRepository.CurrentUser.get()
+        val userId = currentUser?.id
+
+        if (userId == null){
+            _errorMessage.value = "No hay usuario logueado"
             return
         }
 
         if (_currentPassword.value.isBlank()){
-            _errorMessage.value = "Ingrese contraseña"
+            _errorMessage.value = "Ingrese contraseña actual"
             return
         }
 
@@ -136,7 +159,7 @@ class SettingsViewModel: ViewModel() {
         }
 
         if (_newPassword.value.length < 4 || _newPassword.value.length > 10){
-            _errorMessage.value = "La nueva contraseña entre 4 y 10 carácteres"
+            _errorMessage.value = "La nueva contraseña debe tener entre 4 y 10 caracteres"
             return
         }
 
@@ -151,21 +174,39 @@ class SettingsViewModel: ViewModel() {
             _successMessage.value = null
 
             try {
-                val success = userRepository.updateUserPassword(
+                // ✅ Primero verificar credenciales con login
+                val loginResult = userRepository.iniciarSesion(
                     email = currentUser.email,
-                    currentPassword = _currentPassword.value,
-                    newPassword = _newPassword.value
+                    contrasenna = _currentPassword.value
                 )
 
-                if (success){
-                    _successMessage.value = "Contraseña actualizada correctamente"
-                    clearPasswordForm()
-                }else {
-                    _errorMessage.value = "Error al actualizar la contraseña"
+                when (loginResult) {
+                    is Resultado.Error -> {
+                        _errorMessage.value = "Contraseña actual incorrecta"
+                        _isLoading.value = false
+                        return@launch
+                    }
+                    is Resultado.Exito -> {
+                        // Contraseña correcta, proceder a actualizar
+                        val updateResult = userRepository.actualizarContrasenna(
+                            id = userId,
+                            nuevaContrasenna = _newPassword.value
+                        )
+
+                        when (updateResult) {
+                            is Resultado.Exito -> {
+                                _successMessage.value = "Contraseña actualizada correctamente"
+                                clearPasswordForm()
+                            }
+                            is Resultado.Error -> {
+                                _errorMessage.value = updateResult.excepcion.message ?: "Error al actualizar contraseña"
+                            }
+                        }
+                    }
                 }
-            }catch (e: Exception){
+            } catch (e: Exception) {
                 _errorMessage.value = "Error: ${e.message}"
-            }finally {
+            } finally {
                 _isLoading.value = false
             }
         }
@@ -194,6 +235,6 @@ class SettingsViewModel: ViewModel() {
         _successMessage.value = null
     }
 
-    fun getCurrentUser() = userRepository.getCurrentUser()
-
+    // ✅ Cambiar getCurrentUser() por esta función
+    fun getCurrentUser() = UsuarioRepository.CurrentUser.get()
 }

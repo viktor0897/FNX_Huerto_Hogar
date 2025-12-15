@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.fnx_huerto_hogar.data.CheckoutState
 import com.example.fnx_huerto_hogar.data.DeliveryType
 import com.example.fnx_huerto_hogar.data.PaymentMethod
-import com.example.fnx_huerto_hogar.data.model.CartItem
+import com.example.fnx_huerto_hogar.data.repository.CartRepository
 import com.example.fnx_huerto_hogar.data.repository.UsuarioRepository
 import com.example.fnx_huerto_hogar.data.repository.WeatherRepository
 import com.google.android.gms.maps.model.LatLng
@@ -20,11 +20,21 @@ import kotlinx.coroutines.launch
 
 class CheckoutViewModel : ViewModel() {
 
+    private val cartRepository = CartRepository()
+    private val weatherRepository = WeatherRepository()
+
     private val _state = MutableStateFlow(CheckoutState())
     val state: StateFlow<CheckoutState> = _state.asStateFlow()
 
-    var cartItems: List<CartItem> = emptyList()
-    var totalPrice: Double = 0.0
+    // Estado del carrito
+    private val _totalPrice = MutableStateFlow(0.0)
+    val totalPrice: StateFlow<Double> = _totalPrice.asStateFlow()
+
+    private val _totalItems = MutableStateFlow(0)
+    val totalItems: StateFlow<Int> = _totalItems.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     // Estado para mostrar/ocultar mapa
     private val _showMap = MutableStateFlow(false)
@@ -34,33 +44,76 @@ class CheckoutViewModel : ViewModel() {
     private val _pickupLocation = mutableStateOf<LatLng?>(null)
     val pickupLocation: LatLng? get() = _pickupLocation.value
 
-    // Repositorio del clima
-    private val weatherRepository = WeatherRepository()
+    // Confirmación de pedido
     var showConfirmationCard by mutableStateOf(false)
         private set
 
-    fun showCard() {
-        showConfirmationCard = true
-    }
-
-
     init {
         loadUserData()
+        loadCartData()
     }
 
+    /**
+     * Cargar datos del usuario actual desde UsuarioRepository.CurrentUser
+     */
     private fun loadUserData() {
-        viewModelScope.launch {
-            val currentUser = UsuarioRepository.getCurrentUser()
-            currentUser?.let { user ->
-                _state.update { state ->
-                    state.copy(
-                        deliveryAddress = "${user.direccion}, ${user.comuna}, ${user.region}",
-                        recipientName = "${user.nombre} ${user.apellido}",
-                        recipientPhone = user.telefono ?: ""
-                    )
-                }
+        val currentUser = UsuarioRepository.CurrentUser.get()
+        currentUser?.let { user ->
+            _state.update { state ->
+                state.copy(
+                    deliveryAddress = buildString {
+                        if (!user.direccion.isNullOrBlank()) append(user.direccion)
+                        if (!user.comuna.isNullOrBlank()) {
+                            if (isNotEmpty()) append(", ")
+                            append(user.comuna)
+                        }
+                        if (!user.region.isNullOrBlank()) {
+                            if (isNotEmpty()) append(", ")
+                            append(user.region)
+                        }
+                    },
+                    recipientName = "${user.nombre} ${user.apellido}",
+                    recipientPhone = user.telefono ?: ""
+                )
             }
         }
+    }
+
+    /**
+     * Cargar datos del carrito del usuario actual
+     */
+    private fun loadCartData() {
+        viewModelScope.launch {
+            _isLoading.value = true
+
+            val currentUser = UsuarioRepository.CurrentUser.get()
+            val userId = currentUser?.id
+
+            // ✅ Validar que existe usuario Y que tiene ID
+            if (userId == null) {
+                _state.update { it.copy(errorMessage = "Debes iniciar sesión para continuar") }
+                _isLoading.value = false
+                return@launch
+            }
+
+            // Ahora userId es Long (no nullable)
+            val result = cartRepository.getCart(userId)
+            result.onSuccess { cart ->
+                _totalPrice.value = cart.total
+                _totalItems.value = cart.items.sumOf { it.quantity }
+            }.onFailure { error ->
+                _state.update { it.copy(errorMessage = error.message ?: "Error al cargar carrito") }
+            }
+
+            _isLoading.value = false
+        }
+    }
+
+    /**
+     * Recargar el carrito manualmente
+     */
+    fun refreshCart() {
+        loadCartData()
     }
 
     fun savePickupLocation(location: LatLng) {
@@ -69,6 +122,18 @@ class CheckoutViewModel : ViewModel() {
 
     fun clearPickupLocation() {
         _pickupLocation.value = null
+    }
+
+    fun toggleMapVisibility() {
+        _showMap.value = !_showMap.value
+    }
+
+    fun showMap() {
+        _showMap.value = true
+    }
+
+    fun hideMap() {
+        _showMap.value = false
     }
 
     private fun validateForm(): Boolean {
@@ -83,6 +148,11 @@ class CheckoutViewModel : ViewModel() {
 
         if (currentState.recipientName.isBlank() || currentState.recipientPhone.isBlank()) {
             _state.update { it.copy(errorMessage = "Por favor completa los datos del destinatario") }
+            return false
+        }
+
+        if (_pickupLocation.value == null) {
+            _state.update { it.copy(errorMessage = "Debes seleccionar una ubicación en el mapa") }
             return false
         }
 
@@ -114,7 +184,17 @@ class CheckoutViewModel : ViewModel() {
         _state.update { it.copy(errorMessage = "") }
     }
 
+    fun showCard() {
+        showConfirmationCard = true
+    }
 
+    fun hideCard() {
+        showConfirmationCard = false
+    }
+
+    /**
+     * Confirmar el pedido con validación y obtención del clima
+     */
     fun confirmOrder(
         onWeatherReady: () -> Unit,
     ) {
@@ -136,11 +216,11 @@ class CheckoutViewModel : ViewModel() {
                     return@launch
                 }
 
-                // 2. Obtener información del clima (REEMPLAZA TU_API_KEY con la real)
+                // 2. Obtener información del clima
                 val weather = weatherRepository.getWeather(
                     lat = location.latitude,
                     lon = location.longitude,
-                    apiKey = "5385be87a14db7b371ea7d1bb19fc80d"  // ¡IMPORTANTE!
+                    apiKey = "5385be87a14db7b371ea7d1bb19fc80d"
                 )
 
                 val description = weather.weather.firstOrNull()?.description ?: "Desconocido"
@@ -159,9 +239,6 @@ class CheckoutViewModel : ViewModel() {
                 // 4. Mostrar información del clima
                 onWeatherReady()
 
-                // 5. Luego de que el usuario vea el clima, navegar
-                // Esto se maneja en el diálogo que se cierra
-
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
@@ -170,6 +247,29 @@ class CheckoutViewModel : ViewModel() {
                     )
                 }
             }
+        }
+    }
+
+    /**
+     * Crear la orden en el backend
+     */
+    suspend fun createOrder(): Result<Long> {
+        return try {
+            val currentUser = UsuarioRepository.CurrentUser.get()
+            val userId = currentUser?.id
+
+            // ✅ Validar que existe usuario Y que tiene ID
+            if (userId == null) {
+                return Result.failure(Exception("Debes iniciar sesión para continuar"))
+            }
+
+            // TODO Implementar llamada real al backend para crear orden
+            // val orderResponse = orderRepository.createOrder(userId, ...)
+
+            // Por ahora retornamos un ID de ejemplo
+            Result.success(1L)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

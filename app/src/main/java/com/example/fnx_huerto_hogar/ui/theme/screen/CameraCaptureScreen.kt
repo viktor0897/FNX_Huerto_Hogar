@@ -50,16 +50,16 @@ fun CameraCaptureScreen(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            imageUri = fileUri // La foto se guardó en fileUri
+            imageUri = fileUri
         }
     }
 
-    // 4. Launcher para permisos (¡ESTE ES EL QUE MUESTRA EL DIÁLOGO!)
+    // 4. Launcher para permisos
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            // Si el usuario DA PERMISO, abrir cámara
+
             cameraLauncher.launch(fileUri)
         } else {
             // Si el usuario NIEGA permiso, regresar
@@ -136,9 +136,7 @@ fun CameraCaptureScreen(
                 Button(
                     onClick = {
                         imageUri?.let { uri ->
-                            // GUARDAR LA FOTO - ¡ESTO ES LO IMPORTANTE!
-                            // Convertir URI a String y guardar en Repository
-                            UsuarioRepository.updateProfilePicture(uri.toString())
+                            UsuarioRepository.CurrentUser.updateProfilePicture(uri.toString())
 
                             // Regresar a la pantalla anterior
                             navController.popBackStack()
@@ -175,7 +173,7 @@ fun CameraCaptureScreen(
     }
 }
 
-// Función para crear archivo de imagen (MANTENER ESTA FUNCIÓN)
+// Función para crear archivo de imagen
 private fun createImageFile(context: Context): File {
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
