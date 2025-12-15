@@ -1,17 +1,14 @@
 package com.example.fnx_huerto_hogar.ui.theme.components
 
-import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.outlined.ExitToApp
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,34 +17,22 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.rememberAsyncImagePainter
 import com.example.fnx_huerto_hogar.R
 import com.example.fnx_huerto_hogar.data.model.Usuario
 import com.example.fnx_huerto_hogar.ui.theme.BrownSecondary
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
 import com.example.fnx_huerto_hogar.ui.theme.GreenSecondary
-import com.example.fnx_huerto_hogar.ui.theme.screen.*
-import com.example.fnx_huerto_hogar.ui.theme.screen.CameraCaptureScreen
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.fnx_huerto_hogar.data.repository.UsuarioRepository
 
 @Composable
 fun UserLateralMenu(
     currentUser: Usuario,
     onLogoutClick: () -> Unit,
     onSettingsClick: () -> Unit,
-    navController: NavController,
-    onCameraClick: () -> Unit
+    navController: NavController
 ) {
-    // 1. Obtener la foto ACTUAL del Repository
-    val currentPhotoUri = remember {
-        // Leer la foto directamente del Repository
-        UsuarioRepository.getCurrentUser()?.profilePicture?.let { Uri.parse(it) }
-    }
+
 
     ModalDrawerSheet(
         drawerContainerColor = GrayBackground,
@@ -59,76 +44,15 @@ fun UserLateralMenu(
                 .padding(horizontal = 16.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 2. Mostrar la foto (si existe) o la imagen por defecto
-            Box(
+            // Avatar simple
+            Image(
+                painter = painterResource(id = R.drawable.cabecero),
+                contentDescription = "Avatar del usuario",
                 modifier = Modifier
-                    .size(120.dp)
-                    .clickable {
-                        onCameraClick() // Esto navega a la pantalla de cámara
-                    }
-            ) {
-                if (currentPhotoUri != null) {
-                    Image(
-                        painter = rememberAsyncImagePainter(model = currentPhotoUri),
-                        contentDescription = "Foto de perfil",
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(CircleShape)
-                            .align(Alignment.Center),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Image(
-                        painter = painterResource(id = R.drawable.cabecero),
-                        contentDescription = "Foto de perfil por defecto",
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(CircleShape)
-                            .align(Alignment.Center),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-                // Overlay circular para indicar que es clickeable
-                Surface(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                        .align(Alignment.Center),
-                    color = Color.Black.copy(alpha = 0.3f),
-                    shape = CircleShape
-                ) {}
-
-                // Icono de cámara en el centro
-                Icon(
-                    imageVector = Icons.Filled.AddAPhoto,
-                    contentDescription = "Cambiar foto",
-                    tint = Color.White,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .align(Alignment.Center)
-                )
-
-                // Texto "Cambiar foto" en la parte inferior
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(30.dp)
-                        .align(Alignment.BottomCenter),
-                    color = GreenPrimary.copy(alpha = 0.8f),
-                    shape = CircleShape
-                ) {
-                    Text(
-                        text = "Cambiar foto",
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelSmall,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .padding(vertical = 6.dp)
-                    )
-                }
-            }
+                    .size(100.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
 
             Spacer(modifier = Modifier.padding(vertical = 16.dp))
 

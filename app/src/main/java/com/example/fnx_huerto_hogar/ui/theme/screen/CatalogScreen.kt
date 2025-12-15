@@ -48,8 +48,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.example.fnx_huerto_hogar.R
 import com.example.fnx_huerto_hogar.data.model.Product
-import com.example.fnx_huerto_hogar.data.model.ProductCategory
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
 import com.example.fnx_huerto_hogar.ui.theme.GreenSecondary
@@ -64,16 +65,16 @@ fun CatalogScreen(
     viewModel: CatalogoViewModel = viewModel()
 ) {
 
-    //Estados
+    // Estados
     val products by viewModel.products.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
 
-    var selectedProductId by remember {mutableStateOf<String?>(null)}
-    var showProductDetail by remember {mutableStateOf(false)}
+    var selectedProductId by remember { mutableStateOf<String?>(null) }
+    var showProductDetail by remember { mutableStateOf(false) }
 
-    LaunchedEffect(selectedProductId){
-        if (selectedProductId != null){
+    LaunchedEffect(selectedProductId) {
+        if (selectedProductId != null) {
             showProductDetail = true
         }
     }
@@ -81,8 +82,8 @@ fun CatalogScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title ={
-                    Text (
+                title = {
+                    Text(
                         text = "Catálogo",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
@@ -92,8 +93,7 @@ fun CatalogScreen(
                 navigationIcon = {
                     IconButton(onClick = {
                         navController.popBackStack()
-                    }
-                    ) {
+                    }) {
                         Icon(
                             imageVector = Icons.Outlined.ArrowBack,
                             contentDescription = "Volver Atrás",
@@ -114,7 +114,7 @@ fun CatalogScreen(
                 .background(GrayBackground)
                 .padding(paddingValues)
         ) {
-            //Filtros
+            // Filtros
             CategoryFilterSection(
                 categories = viewModel.categories,
                 selectedCategory = selectedCategory,
@@ -149,9 +149,9 @@ fun CatalogScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryFilterSection(
-    categories: List<ProductCategory>,
-    selectedCategory: ProductCategory?,
-    onCategorySelected: (ProductCategory?) -> Unit
+    categories: List<String>,
+    selectedCategory: String?,
+    onCategorySelected: (String?) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -170,7 +170,7 @@ fun CategoryFilterSection(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Chip "Todos" - Versión Simple
+            // Chip "Todos"
             FilterChip(
                 selected = selectedCategory == null,
                 onClick = { onCategorySelected(null) },
@@ -181,12 +181,12 @@ fun CategoryFilterSection(
                 )
             )
 
-            // Chips de Categorías - Versión Simple
+            // Chips de Categorías usando String
             categories.forEach { category ->
                 FilterChip(
                     selected = selectedCategory == category,
                     onClick = { onCategorySelected(category) },
-                    label = { Text(category.name) },
+                    label = { Text(getCategoryDisplayName(category)) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = GreenPrimary,
                         selectedLabelColor = Color.White
@@ -196,6 +196,15 @@ fun CategoryFilterSection(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+fun getCategoryDisplayName(category: String): String {
+    return when (category) {
+        "FRUTAS" -> "Frutas"
+        "VERDURAS" -> "Verduras"
+        "ORGANICOS" -> "Orgánicos"
+        else -> category
     }
 }
 
@@ -227,7 +236,7 @@ fun ProductList(
 fun ProductCard(
     product: Product,
     onProductClick: (Product) -> Unit
-){
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -235,16 +244,14 @@ fun ProductCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        // Navegar al detalle del producto
-        onClick = {onProductClick(product)}
-
-    ){
+        onClick = { onProductClick(product) }
+    ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            //Imagen
-            Image(
-                painter = painterResource(id = product.image),
+            // Imagen - Ahora carga desde URL
+            AsyncImage(
+                model = product.image,
                 contentDescription = "Imagen de ${product.name}",
                 modifier = Modifier
                     .fillMaxWidth()
@@ -255,7 +262,7 @@ fun ProductCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            //Nombre y precio
+            // Nombre y precio
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -292,18 +299,18 @@ fun ProductCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            //Origen y medida
+            // Origen y medida
             Text(
-                text = "${product.origin} • ${product.measure}",
+                text = "${product.origin ?: "Origen desconocido"} • ${product.measure ?: ""}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            //Descripción
+            // Descripción
             Text(
-                text = product.description,
+                text = product.description ?: "",
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -311,22 +318,22 @@ fun ProductCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            //Stock y categoría
+            // Stock y categoría
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = if (product.stockAvailable()) {
+                    text = if (product.stock > 0) {
                         "Stock: ${product.stock}"
                     } else {
                         "Sin stock"
                     },
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (product.stockAvailable()) GreenPrimary else Color.Red
+                    color = if (product.stock > 0) GreenPrimary else Color.Red
                 )
 
-                //Categoría con verde suave
+                // Categoría con verde suave
                 Box(
                     modifier = Modifier
                         .background(
@@ -336,7 +343,7 @@ fun ProductCard(
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = product.category.name,
+                        text = getCategoryDisplayName(product.category),
                         style = MaterialTheme.typography.bodySmall,
                         color = GreenPrimary
                     )

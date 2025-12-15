@@ -1,34 +1,88 @@
-package com.example.fnx_huerto_hogar.Remote
+package com.example.fnx_huerto_hogar.data.remote
 
-import com.example.fnx_huerto_hogar.data.model.Usuario
+import com.example.fnx_huerto_hogar.data.model.*
 import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.DELETE
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.PUT
-import retrofit2.http.Path
+import retrofit2.http.*
 
 interface ApiService {
 
-    // 1. REGISTRO (público)
-    @POST("api/usuario/guardar")
-    suspend fun registrarUsuario(@Body usuario: Usuario): Response<Usuario>
+    // ========== USER ENDPOINTS ==========
+    @GET("api/usuario/buscar")
+    suspend fun buscarPorEmail(@Query("email") email: String): Response<UsuarioDto>
 
-    // 2. LOGIN (público) - Solo necesitas email y contraseña
+    @POST("api/usuario/registrar")
+    suspend fun registrarUsuario(@Body request: RegistroRequest): Response<UsuarioDto>
+
     @POST("api/usuario/login")
-    suspend fun login(@Body loginData: Map<String, String>): Response<Map<String, Any>>
+    suspend fun iniciarSesion(@Body request: LoginRequest): Response<LoginResponse>
 
-    // 3. RECUPERAR CONTRASEÑA (público)
-    @POST("api/usuario/recuperar-contrasenna")
-    suspend fun recuperarContrasenna(@Body emailData: Map<String, String>): Response<String>
+    @PUT("api/usuario/{id}/contrasenna")
+    suspend fun actualizarContrasenna(
+        @Path("id") id: Long,
+        @Body request: Map<String, String>
+    ): Response<Map<String, Any>>
 
-    // 4. ACTUALIZAR CONTRASEÑA (público)
-    @PUT("api/usuario/actualizar-contrasenna")
-    suspend fun actualizarContrasenna(@Body datos: Map<String, String>): Response<String>
+    @PUT("api/usuario/{id}/correo")
+    suspend fun actualizarCorreo(
+        @Path("id") id: Long,
+        @Body request: Map<String, String>
+    ): Response<UsuarioDto>
 
-    //5. ACTUALIZAR USUARIO
-    @PUT("api/usuario/actualizar/{id}")
-    suspend fun actualizarUsuario(@Path("id")id: Long,
-                                  @Body usuario: Usuario): Response<Usuario>
+    @DELETE("api/usuario/{id}")
+    suspend fun eliminarUsuario(@Path("id") id: Long): Response<Map<String, Any>>
+
+    @GET("api/usuario/verificar-email")
+    suspend fun verificarEmail(@Query("email") email: String): Response<Map<String, Any>>
+
+    // ========== PRODUCT ENDPOINTS ==========
+    @GET("api/products")
+    suspend fun getAllProducts(): List<Product>
+
+    @GET("api/products/{id}")
+    suspend fun getProductById(@Path("id") id: String): Product
+
+    @GET("api/products/category/{category}")
+    suspend fun getProductsByCategory(@Path("category") category: String): List<Product>
+
+    @GET("api/products/search")
+    suspend fun searchProducts(@Query("name") name: String): List<Product>
+
+    @GET("api/products/stock")
+    suspend fun getProductsWithStock(): List<Product>
+
+    @POST("api/products")
+    suspend fun createProduct(@Body product: Product): Product
+
+    @PUT("api/products/{id}")
+    suspend fun updateProduct(@Path("id") id: String, @Body product: Product): Product
+
+    @DELETE("api/products/{id}")
+    suspend fun deleteProduct(@Path("id") id: String): Response<Unit>
+
+
+    // ========== CART ENDPOINTS ==========
+    @GET("api/cart/{userId}")
+    suspend fun getCart(@Path("userId") userId: Long): Cart
+
+    @POST("api/cart/{userId}/add")
+    suspend fun addToCart(
+        @Path("userId") userId: Long,
+        @Body request: AddToCartRequest
+    ): Cart
+
+    @PUT("api/cart/{userId}/update/{productId}")
+    suspend fun updateCartItem(
+        @Path("userId") userId: Long,
+        @Path("productId") productId: String,
+        @Body request: Map<String, Int>  // {"quantity": 5}
+    ): Cart
+
+    @DELETE("api/cart/{userId}/remove/{productId}")
+    suspend fun removeFromCart(
+        @Path("userId") userId: Long,
+        @Path("productId") productId: String
+    ): Cart
+
+    @DELETE("api/cart/{userId}/clear")
+    suspend fun clearCart(@Path("userId") userId: Long): Response<Unit>
 }

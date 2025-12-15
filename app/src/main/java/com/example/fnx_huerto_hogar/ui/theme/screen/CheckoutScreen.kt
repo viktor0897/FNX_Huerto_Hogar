@@ -4,12 +4,9 @@ import android.Manifest
 import android.annotation.SuppressLint
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -21,19 +18,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.fnx_huerto_hogar.data.DeliveryType
 import com.example.fnx_huerto_hogar.data.PaymentMethod
-import com.example.fnx_huerto_hogar.data.model.CartItem
-import com.example.fnx_huerto_hogar.navigate.AppScreens
 import com.example.fnx_huerto_hogar.ui.theme.*
-import com.example.fnx_huerto_hogar.ui.theme.viewModel.CartViewModel
 import com.example.fnx_huerto_hogar.ui.theme.viewModel.CheckoutViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -46,24 +38,17 @@ import kotlinx.coroutines.tasks.await
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CheckoutScreen(
-    navController: NavController
+    navController: NavController,
+    usuarioId: Long = 1L // Pasar el ID del usuario logueado
 ) {
-    //ViewModel del carrtio
-    val cartViewModel: CartViewModel = viewModel()
-    val cartItems by cartViewModel.cartItems.collectAsState()
-    val totalPrice by cartViewModel.totalPrice.collectAsState()
-
     val viewModel: CheckoutViewModel = viewModel()
     val state by viewModel.state.collectAsState()
+    val totalPrice by viewModel.totalPrice.collectAsState()
+    val totalItems by viewModel.totalItems.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     // Control para mostrar el diálogo del clima
     var showWeatherDialog by remember { mutableStateOf(false) }
-
-    // Inicializamos con los datos del carrito
-    LaunchedEffect(Unit) {
-        viewModel.cartItems = cartItems
-        viewModel.totalPrice = totalPrice
-    }
 
     Scaffold(
         topBar = {
@@ -77,11 +62,7 @@ fun CheckoutScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            navController.popBackStack()
-                        }
-                    ) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.Outlined.ArrowBack,
                             contentDescription = "Volver",
@@ -102,8 +83,11 @@ fun CheckoutScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Resumen
-            OrderSummarySection(cartItems, totalPrice)
+            // Resumen del pedido (simplificado)
+            OrderSummaryCard(
+                totalItems = totalItems,
+                totalPrice = totalPrice
+            )
 
             // Tipo de entrega
             DeliveryTypeSection(
@@ -136,7 +120,7 @@ fun CheckoutScreen(
                 }
             )
 
-            // Metodo de pago
+            // Método de pago
             PaymentMethodSection(
                 paymentMethod = state.paymentMethod,
                 onPaymentMethodSelected = viewModel::setPaymentMethod
@@ -150,12 +134,11 @@ fun CheckoutScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón Confirmar - MODIFICADO (SOLO un callback)
+            // Botón Confirmar
             ConfirmOrderButton(
                 isLoading = state.isLoading,
                 isConfirmed = state.isConfirmed,
                 onConfirm = {
-                    // Solo mostramos el diálogo del clima
                     viewModel.confirmOrder(
                         onWeatherReady = { showWeatherDialog = true }
                     )
@@ -173,22 +156,20 @@ fun CheckoutScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Diálogo del clima que se muestra después de confirmar
+        // Diálogo del clima
         if (showWeatherDialog) {
             WeatherAlertDialog(
                 weatherDescription = state.weatherDescription,
                 weatherTemperature = state.weatherTemperature,
-                onDismiss = {
-                    showWeatherDialog = false
-                    // SOLO se cierra el diálogo, no se navega a ninguna parte
-                }
+                onDismiss = { showWeatherDialog = false }
             )
         }
     }
 }
+
 @Composable
-fun OrderSummarySection(
-    cartItems: List<CartItem>,
+fun OrderSummaryCard(
+    totalItems: Int,
     totalPrice: Double
 ) {
     Card(
@@ -198,56 +179,39 @@ fun OrderSummarySection(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "Resumen del pedido",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = GreenPrimary,
-                modifier = Modifier
-                    .padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            // Lista de productos
-            LazyColumn(
-                modifier = Modifier.heightIn(max = 200.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                items(cartItems) { item ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "${item.quantity} x ${item.name}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        Text(
-                            text = "$${item.subtotal}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
+                Text(
+                    text = "Total de productos:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "$totalItems items",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
             }
 
-            Divider(
-                modifier = Modifier
-                    .padding(vertical = 12.dp),
-                color = GreenSecondary
-            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Divider(color = GreenSecondary.copy(alpha = 0.3f))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Total
             Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Total:",
@@ -255,7 +219,6 @@ fun OrderSummarySection(
                     fontWeight = FontWeight.Bold,
                     color = GreenPrimary
                 )
-
                 Box(
                     modifier = Modifier
                         .background(
@@ -265,7 +228,7 @@ fun OrderSummarySection(
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
-                        text = "$${totalPrice.toInt()}",
+                        text = "$${String.format("%.2f", totalPrice)}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
@@ -288,19 +251,15 @@ fun DeliveryTypeSection(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "Tipo de entrega",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = GreenPrimary,
-                modifier = Modifier
-                    .padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            // Opción delivery a domicilio
             DeliveryTypeOption(
                 title = "Despacho a Domicilio",
                 description = "Recibe el pedido en tu dirección",
@@ -311,9 +270,8 @@ fun DeliveryTypeSection(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Opción de Retiro en tienda
             DeliveryTypeOption(
-                title = "Retiro en tienda", // CORREGIDO: "Retino" -> "Retiro"
+                title = "Retiro en tienda",
                 description = "Retira el pedido en Tienda",
                 icon = Icons.Outlined.Store,
                 isSelected = deliveryType == DeliveryType.STORE_PICKUP,
@@ -339,7 +297,9 @@ fun DeliveryTypeOption(
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) GreenSecondary else Color.White
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 2.dp else 1.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 2.dp else 1.dp
+        )
     ) {
         Row(
             modifier = Modifier
@@ -348,28 +308,21 @@ fun DeliveryTypeOption(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = icon,
                     contentDescription = title,
                     tint = if (isSelected) GreenPrimary else Color.Gray,
                     modifier = Modifier.size(24.dp)
                 )
-
                 Spacer(modifier = Modifier.width(12.dp))
-
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = if (isSelected) GreenPrimary else Color.Black
                     )
-
                     Text(
                         text = description,
                         style = MaterialTheme.typography.bodySmall,
@@ -377,7 +330,6 @@ fun DeliveryTypeOption(
                     )
                 }
             }
-
             RadioButton(
                 selected = isSelected,
                 onClick = onClick,
@@ -402,12 +354,9 @@ fun DeliveryAddressSection(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp) // Agregado padding
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -416,9 +365,7 @@ fun DeliveryAddressSection(
                     tint = GreenPrimary,
                     modifier = Modifier.size(20.dp)
                 )
-
                 Spacer(modifier = Modifier.width(8.dp))
-
                 Text(
                     text = "Dirección de Entrega",
                     style = MaterialTheme.typography.titleMedium,
@@ -436,13 +383,10 @@ fun DeliveryAddressSection(
                 shape = RoundedCornerShape(8.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = GreenPrimary,
-                    unfocusedBorderColor = Color.LightGray // CORREGIDO
+                    unfocusedBorderColor = Color.LightGray
                 ),
                 placeholder = {
-                    Text(
-                        text = "Ingresa tu dirección completa",
-                        color = Color.Gray
-                    )
+                    Text("Ingresa tu dirección completa", color = Color.Gray)
                 },
                 singleLine = false,
                 minLines = 2,
@@ -466,9 +410,7 @@ fun StorePickupSection(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -479,9 +421,7 @@ fun StorePickupSection(
                     tint = GreenPrimary,
                     modifier = Modifier.size(20.dp)
                 )
-
                 Spacer(modifier = Modifier.width(8.dp))
-
                 Text(
                     text = "Sucursal de Retiro",
                     style = MaterialTheme.typography.titleMedium,
@@ -507,13 +447,9 @@ fun StorePickupSection(
                     containerColor = GreenSecondary
                 )
             ) {
-                Text(
-                    text = "Seleccionar punto de retiro en mapa",
-                    color = GreenPrimary
-                )
+                Text("Seleccionar punto de retiro en mapa", color = GreenPrimary)
             }
 
-            // Mostrar ubicación seleccionada si existe
             viewModel.pickupLocation?.let { location ->
                 Spacer(modifier = Modifier.height(12.dp))
                 Card(
@@ -554,7 +490,6 @@ fun StorePickupSection(
         }
     }
 
-    // Mostrar el mapa cuando showMap es true
     if (showMap) {
         AlertDialog(
             onDismissRequest = { showMap = false },
@@ -563,7 +498,6 @@ fun StorePickupSection(
                 MapCard(
                     modifier = Modifier.fillMaxWidth(),
                     onLocationSelected = { location ->
-                        // Guardar en el ViewModel
                         viewModel.savePickupLocation(location)
                     },
                     onCancel = { showMap = false }
@@ -589,9 +523,7 @@ fun RecipientInfoSection(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "Datos del Destinatario",
                 style = MaterialTheme.typography.titleMedium,
@@ -611,12 +543,8 @@ fun RecipientInfoSection(
                     focusedBorderColor = GreenPrimary,
                     unfocusedBorderColor = Color.LightGray
                 ),
-                placeholder = {
-                    Text("Nombre completo", color = Color.Gray)
-                },
-                leadingIcon = {
-                    Icon(Icons.Outlined.Person, null, tint = GreenPrimary)
-                }
+                placeholder = { Text("Nombre completo", color = Color.Gray) },
+                leadingIcon = { Icon(Icons.Outlined.Person, null, tint = GreenPrimary) }
             )
 
             OutlinedTextField(
@@ -628,12 +556,8 @@ fun RecipientInfoSection(
                     focusedBorderColor = GreenPrimary,
                     unfocusedBorderColor = Color.LightGray
                 ),
-                placeholder = {
-                    Text("Teléfono de contacto", color = Color.Gray)
-                },
-                leadingIcon = {
-                    Icon(Icons.Outlined.Phone, null, tint = GreenPrimary)
-                }
+                placeholder = { Text("Teléfono de contacto", color = Color.Gray) },
+                leadingIcon = { Icon(Icons.Outlined.Phone, null, tint = GreenPrimary) }
             )
         }
     }
@@ -651,9 +575,7 @@ fun PaymentMethodSection(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "Método de Pago",
                 style = MaterialTheme.typography.titleMedium,
@@ -662,7 +584,6 @@ fun PaymentMethodSection(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            // Tarjeta de Crédito
             PaymentMethodOption(
                 title = "Tarjeta de Crédito",
                 icon = Icons.Outlined.CreditCard,
@@ -672,7 +593,6 @@ fun PaymentMethodSection(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Tarjeta de Débito
             PaymentMethodOption(
                 title = "Tarjeta de Débito",
                 icon = Icons.Outlined.CreditCard,
@@ -682,7 +602,6 @@ fun PaymentMethodSection(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // PayPal
             PaymentMethodOption(
                 title = "PayPal",
                 icon = Icons.Outlined.Payment,
@@ -719,18 +638,14 @@ fun PaymentMethodOption(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = icon,
                     contentDescription = title,
                     tint = if (isSelected) GreenPrimary else Color.Gray,
                     modifier = Modifier.size(24.dp)
                 )
-
                 Spacer(modifier = Modifier.width(12.dp))
-
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyMedium,
@@ -739,7 +654,6 @@ fun PaymentMethodOption(
                     modifier = Modifier.weight(1f)
                 )
             }
-
             RadioButton(
                 selected = isSelected,
                 onClick = onClick,
@@ -764,9 +678,7 @@ fun DeliveryInstructionsSection(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -777,9 +689,7 @@ fun DeliveryInstructionsSection(
                     tint = GreenPrimary,
                     modifier = Modifier.size(20.dp)
                 )
-
                 Spacer(modifier = Modifier.width(8.dp))
-
                 Text(
                     text = "Instrucciones de Entrega (Opcional)",
                     style = MaterialTheme.typography.titleMedium,
@@ -800,10 +710,7 @@ fun DeliveryInstructionsSection(
                     unfocusedBorderColor = Color.LightGray
                 ),
                 placeholder = {
-                    Text(
-                        text = "Ej: Llamar antes de llegar, timbre rojo, etc.",
-                        color = Color.Gray
-                    )
+                    Text("Ej: Llamar antes de llegar, timbre rojo, etc.", color = Color.Gray)
                 },
                 singleLine = false,
                 minLines = 2,
@@ -823,48 +730,46 @@ fun ConfirmOrderButton(
         modifier = Modifier.padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (isLoading) {
-            CircularProgressIndicator(
-                color = GreenPrimary,
-                modifier = Modifier.size(48.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Procesando pago...",
-                color = GreenPrimary
-            )
-        } else if (isConfirmed) {
-            Icon(
-                imageVector = Icons.Outlined.CheckCircle,
-                contentDescription = "Confirmado",
-                tint = GreenPrimary,
-                modifier = Modifier.size(48.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "¡Pedido Confirmado!",
-                style = MaterialTheme.typography.titleMedium,
-                color = GreenPrimary,
-                fontWeight = FontWeight.Bold
-            )
-        } else {
-
-            Button(
-                onClick = onConfirm,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = GreenPrimary
-                ),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
-            ) {
+        when {
+            isLoading -> {
+                CircularProgressIndicator(
+                    color = GreenPrimary,
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Procesando pago...", color = GreenPrimary)
+            }
+            isConfirmed -> {
+                Icon(
+                    imageVector = Icons.Outlined.CheckCircle,
+                    contentDescription = "Confirmado",
+                    tint = GreenPrimary,
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Confirmar Pedido",
+                    text = "¡Pedido Confirmado!",
                     style = MaterialTheme.typography.titleMedium,
+                    color = GreenPrimary,
                     fontWeight = FontWeight.Bold
                 )
+            }
+            else -> {
+                Button(
+                    onClick = onConfirm,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                ) {
+                    Text(
+                        text = "Confirmar Pedido",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
 
@@ -899,16 +804,13 @@ fun ErrorMessage(
                 tint = Color.Red,
                 modifier = Modifier.size(24.dp)
             )
-
             Spacer(modifier = Modifier.width(12.dp))
-
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Red,
                 modifier = Modifier.weight(1f)
             )
-
             IconButton(onClick = onDismiss) {
                 Icon(
                     imageVector = Icons.Outlined.Close,
@@ -920,7 +822,8 @@ fun ErrorMessage(
     }
 }
 
-@SuppressLint("MissingPermission", "CoroutinesCreationDuringComposition")
+// Mantener MapCard y WeatherAlertDialog igual que antes
+@SuppressLint("MissingPermission")
 @Composable
 fun MapCard(
     modifier: Modifier = Modifier,
@@ -931,6 +834,7 @@ fun MapCard(
     val coroutineScope = rememberCoroutineScope()
 
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
+    var selectedLocation by remember { mutableStateOf<LatLng?>(null) }
     var locationMessage by remember { mutableStateOf("Inicializando...") }
     var isLoading by remember { mutableStateOf(false) }
     var hasLocationPermission by remember { mutableStateOf(false) }
@@ -941,15 +845,14 @@ fun MapCard(
 
     suspend fun getCurrentLocation() {
         if (!hasLocationPermission) return
-
         isLoading = true
         try {
             val location = fusedLocationClient.getCurrentLocation(
                 Priority.PRIORITY_HIGH_ACCURACY, null
             ).await()
-
             if (location != null) {
                 userLocation = LatLng(location.latitude, location.longitude)
+                selectedLocation = userLocation // Inicializar selección con ubicación actual
                 locationMessage = "Ubicación obtenida"
             } else {
                 locationMessage = "No se pudo obtener ubicación"
@@ -966,38 +869,17 @@ fun MapCard(
         onResult = { permissions ->
             val hasFineLocation = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
             val hasCoarseLocation = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-
             hasLocationPermission = hasFineLocation || hasCoarseLocation
-
-            when {
-                hasFineLocation -> {
-                    locationMessage = "Permisos concedidos"
-                    coroutineScope.launch {
-                        getCurrentLocation()
-                    }
-                }
-                hasCoarseLocation -> {
-                    locationMessage = "Permisos concedidos"
-                    coroutineScope.launch {
-                        getCurrentLocation()
-                    }
-                }
-                else -> {
-                    locationMessage = "Permisos denegados"
-                    hasLocationPermission = false
-                }
+            if (hasLocationPermission) {
+                locationMessage = "Permisos concedidos"
+                coroutineScope.launch { getCurrentLocation() }
+            } else {
+                locationMessage = "Permisos denegados"
             }
         }
     )
 
-    val cameraPositionState = rememberCameraPositionState()
-
-    LaunchedEffect(userLocation) {
-        userLocation?.let { location ->
-            cameraPositionState.position = CameraPosition.fromLatLngZoom(location, 15f)
-        }
-    }
-
+    // Solicitar permisos al iniciar
     LaunchedEffect(Unit) {
         locationPermissionLauncher.launch(
             arrayOf(
@@ -1007,156 +889,143 @@ fun MapCard(
         )
     }
 
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            // Header
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(
+            LatLng(-33.4489, -70.6693), // Santiago por defecto
+            12f
+        )
+    }
+
+    LaunchedEffect(userLocation) {
+        userLocation?.let { location ->
+            cameraPositionState.position = CameraPosition.fromLatLngZoom(location, 15f)
+        }
+    }
+
+    Column(modifier = modifier) {
+        // Indicador de carga o mensaje
+        if (isLoading) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.LocationOn,
-                    contentDescription = "Ubicación",
-                    tint = GreenPrimary,
-                    modifier = Modifier.size(20.dp)
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = GreenPrimary,
+                    strokeWidth = 2.dp
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Seleccionar Punto de Retiro",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    text = "Obteniendo ubicación...",
+                    style = MaterialTheme.typography.bodySmall,
                     color = GreenPrimary
                 )
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Mapa
-            if (userLocation != null && hasLocationPermission) {
-                GoogleMap(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(250.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    cameraPositionState = cameraPositionState,
-                    properties = MapProperties(
-                        isMyLocationEnabled = true,
-                        mapType = com.google.maps.android.compose.MapType.NORMAL
-                    ),
-                    uiSettings = MapUiSettings(
-                        zoomControlsEnabled = true,
-                        myLocationButtonEnabled = true,
-                        zoomGesturesEnabled = true,
-                        scrollGesturesEnabled = true
-                    )
-                ) {
-                    userLocation?.let { location ->
-                        Marker(
-                            state = MarkerState(position = location),
-                            title = "Punto de retiro seleccionado"
-                        )
-                    }
-                }
-            } else {
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(250.dp)
-                        .background(Color.LightGray.copy(alpha = 0.2f))
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(color = GreenPrimary)
-                    } else if (!hasLocationPermission) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                Icons.Outlined.LocationOff,
-                                contentDescription = "Sin permisos",
-                                tint = Color.Gray
-                            )
-                            Text(
-                                text = "Permisos de ubicación requeridos",
-                                color = Color.Gray
-                            )
-                        }
-                    } else {
-                        Text("Cargando mapa...", color = Color.Gray)
-                    }
-                }
-            }
-
-            // Mensaje de estado
+        } else if (locationMessage.isNotEmpty() && !hasLocationPermission) {
             Text(
                 text = locationMessage,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (hasLocationPermission) GreenPrimary else Color.Red,
-                modifier = Modifier.padding(vertical = 8.dp)
+                color = Color.Gray,
+                modifier = Modifier.padding(8.dp)
             )
+        }
 
-            // Mostrar coordenadas si hay ubicación
-            userLocation?.let { location ->
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+        // Mapa
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+                .clip(RoundedCornerShape(12.dp))
+        ) {
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                properties = MapProperties(
+                    isMyLocationEnabled = hasLocationPermission
+                ),
+                uiSettings = MapUiSettings(
+                    myLocationButtonEnabled = true,
+                    zoomControlsEnabled = true
+                ),
+                onMapClick = { latLng ->
+                    selectedLocation = latLng
+                }
+            ) {
+                // Marcador de ubicación seleccionada
+                selectedLocation?.let { location ->
+                    Marker(
+                        state = MarkerState(position = location),
+                        title = "Punto de retiro",
+                        snippet = "Lat: ${"%.6f".format(location.latitude)}, Lng: ${"%.6f".format(location.longitude)}"
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Información de ubicación seleccionada
+        selectedLocation?.let { location ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = GreenSecondary.copy(alpha = 0.2f)
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
                     Text(
-                        text = "Lat: ${"%.6f".format(location.latitude)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
+                        text = "📍 Ubicación seleccionada",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = GreenPrimary
                     )
                     Text(
-                        text = "Lng: ${"%.6f".format(location.longitude)}",
+                        text = "Lat: ${"%.6f".format(location.latitude)}, Lng: ${"%.6f".format(location.longitude)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-            // Botones
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+        // Botones
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = onCancel,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent
+                ),
+                border = ButtonDefaults.outlinedButtonBorder(),
+                shape = RoundedCornerShape(8.dp)
             ) {
-                // Botón Cancelar
-                Button(
-                    onClick = onCancel,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Cancelar", color = GreenPrimary)
-                }
+                Text("Cancelar", color = GreenPrimary)
+            }
 
-                // Botón Confirmar
-                Button(
-                    onClick = {
-                        userLocation?.let { onLocationSelected(it) }
+            Button(
+                onClick = {
+                    selectedLocation?.let { location ->
+                        onLocationSelected(location)
                         onCancel()
-                    },
-                    modifier = Modifier.weight(1f),
-                    enabled = userLocation != null,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = GreenPrimary
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Usar", color = Color.White)
-                }
+                    }
+                },
+                modifier = Modifier.weight(1f),
+                enabled = selectedLocation != null,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GreenPrimary
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Confirmar")
             }
         }
     }
