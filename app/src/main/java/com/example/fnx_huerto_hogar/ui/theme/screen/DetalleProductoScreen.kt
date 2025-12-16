@@ -261,8 +261,8 @@ fun DetalleProductoScreen(
                     )
 
                     DetailRow("Categoría", product!!.category)
-                    DetailRow("Origen", product!!.origin)
-                    DetailRow("Medida", product!!.measure)
+                    DetailRow("Origen", product!!.origin?: "No específicado")
+                    DetailRow("Medida", product!!.measure?:"No específicado")
                     DetailRow(
                         "Stock disponible",
                         if (product!!.stockAvailable()) "${product!!.stock} unidades"
@@ -290,7 +290,7 @@ fun DetalleProductoScreen(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     Text(
-                        text = product!!.description,
+                        text = product!!.description?: "No específicado",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )

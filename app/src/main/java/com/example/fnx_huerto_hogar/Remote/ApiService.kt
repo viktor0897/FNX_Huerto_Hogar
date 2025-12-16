@@ -36,19 +36,19 @@ interface ApiService {
 
     // ========== PRODUCT ENDPOINTS ==========
     @GET("api/products")
-    suspend fun getAllProducts(): List<Product>
+    suspend fun getAllProducts(): List<ProductDto>
 
     @GET("api/products/{id}")
-    suspend fun getProductById(@Path("id") id: String): Product
+    suspend fun getProductById(@Path("id") id: String): ProductDto
 
     @GET("api/products/category/{category}")
-    suspend fun getProductsByCategory(@Path("category") category: String): List<Product>
+    suspend fun getProductsByCategory(@Path("category") category: String): List<ProductDto>
 
     @GET("api/products/search")
-    suspend fun searchProducts(@Query("name") name: String): List<Product>
+    suspend fun searchProducts(@Query("name") name: String): List<ProductDto>
 
     @GET("api/products/stock")
-    suspend fun getProductsWithStock(): List<Product>
+    suspend fun getProductsWithStock(): List<ProductDto>
 
     @POST("api/products")
     suspend fun createProduct(@Body product: Product): Product
