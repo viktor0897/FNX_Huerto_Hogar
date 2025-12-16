@@ -116,6 +116,10 @@ dependencies {
     // Activity Compose
     implementation("androidx.activity:activity-compose:1.9.0")
 
+    // Glide para cargar imágenes
+    implementation("com.github.bumptech.glide:glide:4.16.0")    // Glide para cargar imágenes
+
+
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

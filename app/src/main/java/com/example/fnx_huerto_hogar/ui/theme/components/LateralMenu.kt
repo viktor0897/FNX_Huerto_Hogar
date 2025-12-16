@@ -20,8 +20,8 @@ fun LateralMenu() {
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
 
-
     var currentUser by remember { mutableStateOf(UsuarioRepository.CurrentUser.get()) }
+    var profilePictureUri by remember { mutableStateOf(UsuarioRepository.CurrentUser.profilePictureUri) } // NUEVO
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -30,6 +30,7 @@ fun LateralMenu() {
             LaunchedEffect(drawerState.currentValue) {
                 if (drawerState.isOpen) {
                     currentUser = UsuarioRepository.CurrentUser.get()
+                    profilePictureUri = UsuarioRepository.CurrentUser.profilePictureUri // NUEVO
                 }
             }
 
@@ -39,9 +40,9 @@ fun LateralMenu() {
                     onLogoutClick = {
                         scope.launch {
                             drawerState.close()
-                            // SIMPLE: Usar CurrentUser.clear()
                             UsuarioRepository.CurrentUser.clear()
                             currentUser = null
+                            profilePictureUri = null // NUEVO
                             navController.navigate(AppScreens.HomeScreen.route) {
                                 popUpTo(0)
                             }
@@ -53,7 +54,8 @@ fun LateralMenu() {
                             navController.navigate(AppScreens.SettingsScreen.route)
                         }
                     },
-                    navController = navController
+                    navController = navController,
+                    profilePictureUri = profilePictureUri // NUEVO - pasar la URI
                 )
             } else {
                 GuestLateralMenu(
@@ -87,6 +89,7 @@ fun LateralMenu() {
                     onMenuClick = {
                         scope.launch {
                             currentUser = UsuarioRepository.CurrentUser.get()
+                            profilePictureUri = UsuarioRepository.CurrentUser.profilePictureUri // NUEVO
                             drawerState.open()
                         }
                     }

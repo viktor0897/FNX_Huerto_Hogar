@@ -18,8 +18,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
 import com.example.fnx_huerto_hogar.R
 import com.example.fnx_huerto_hogar.data.model.Usuario
+import com.example.fnx_huerto_hogar.navigate.AppScreens
 import com.example.fnx_huerto_hogar.ui.theme.BrownSecondary
 import com.example.fnx_huerto_hogar.ui.theme.GrayBackground
 import com.example.fnx_huerto_hogar.ui.theme.GreenPrimary
@@ -30,10 +32,9 @@ fun UserLateralMenu(
     currentUser: Usuario,
     onLogoutClick: () -> Unit,
     onSettingsClick: () -> Unit,
-    navController: NavController
+    navController: NavController,
+    profilePictureUri: String? = null  // AGREGAR este parámetro
 ) {
-
-
     ModalDrawerSheet(
         drawerContainerColor = GrayBackground,
         modifier = Modifier
@@ -44,14 +45,38 @@ fun UserLateralMenu(
                 .padding(horizontal = 16.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Avatar simple
-            Image(
-                painter = painterResource(id = R.drawable.cabecero),
-                contentDescription = "Avatar del usuario",
+            // Avatar clickeable - REEMPLAZA tu código actual del avatar con esto:
+            Card(
                 modifier = Modifier
                     .size(100.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
+                    .clip(CircleShape)
+                    .clickable {
+                        navController.navigate(AppScreens.CameraCaptureScreen.route)
+                    },
+                shape = CircleShape
+            ) {
+                if (profilePictureUri != null) {
+                    Image(
+                        painter = rememberAsyncImagePainter(model = profilePictureUri),
+                        contentDescription = "Avatar del usuario",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.cabecero),
+                        contentDescription = "Avatar del usuario",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+
+            Text(
+                text = "Toca para cambiar foto",
+                style = MaterialTheme.typography.bodySmall,
+                color = BrownSecondary.copy(alpha = 0.7f),
+                modifier = Modifier.padding(top = 4.dp)
             )
 
             Spacer(modifier = Modifier.padding(vertical = 16.dp))
